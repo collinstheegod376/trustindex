@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../supabase'
-import { ShieldCheck, ShieldAlert, AlertTriangle } from 'lucide-react'
+import { ShieldCheck, ShieldAlert, AlertTriangle, ArrowLeft } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 export default function Admin() {
   const { user, isAdmin } = useAuth()
   const [reports, setReports] = useState([])
   const [accounts, setAccounts] = useState([])
+  const [submissions, setSubmissions] = useState([])
   
   // Manual add state
   const [newHandle, setNewHandle] = useState('')
@@ -32,8 +34,40 @@ export default function Admin() {
       .select('*')
       .order('trust_score', { ascending: true })
 
+    const { data: subs, error: subError } = await supabase
+      .from('host_submissions')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (subError) console.error('Submissions Error:', subError)
+
     setReports(reps || [])
     setAccounts(accs || [])
+    setSubmissions(subs || [])
+  }
+
+  async function handleHostSubmission(subId, handle, action) {
+    try {
+      if (action === 'approve') {
+        // Add to tracked accounts
+        const { error: accError } = await supabase.from('tracked_accounts').insert([{
+          x_handle: handle,
+          status: 'verified',
+          trust_score: 90
+        }])
+        if (accError) throw accError
+      }
+
+      const { error: subError } = await supabase
+        .from('host_submissions')
+        .update({ status: action === 'approve' ? 'approved' : 'rejected' })
+        .eq('id', subId)
+      
+      if (subError) throw subError
+      fetchData()
+    } catch (error) {
+      alert('Error: ' + error.message)
+    }
   }
 
   async function handleReportAction(reportId, accountId, action) {
@@ -103,8 +137,14 @@ export default function Admin() {
   }
 
   return (
-    <div style={{ padding: '20px 0' }}>
-      <h1 style={{ marginBottom: '32px' }}><ShieldCheck size={32} style={{ verticalAlign: 'bottom' }}/> Admin Dashboard</h1>
+    <div className="container" style={{ animation: 'fadeInUp 0.8s ease-out both' }}>
+      <Link to="/" className="btn btn-outline" style={{ marginBottom: '32px' }}>
+        <ArrowLeft size={18} /> Back to Dashboard
+      </Link>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
+        <ShieldCheck size={36} color="var(--accent-blue)" />
+        <h1 style={{ margin: 0 }}>Admin Dashboard</h1>
+      </div>
       
       <section className="glass-panel" style={{ marginBottom: '40px' }}>
         <h2 style={{ marginBottom: '20px' }}>Manually Add Account</h2>
@@ -161,6 +201,33 @@ export default function Admin() {
                 </button>
                 <button className="btn btn-outline" onClick={() => handleReportAction(r.id, r.tracked_account_id, 'reject')}>
                   Reject Report
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="glass-panel" style={{ marginBottom: '40px' }}>
+        <h2 style={{ marginBottom: '20px' }}>Host Submissions ({submissions.length})</h2>
+        {submissions.length === 0 && <p style={{ color: 'var(--text-muted)' }}>No new host submissions.</p>}
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {submissions.map(s => (
+            <div key={s.id} style={{ background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '8px', border: '1px solid var(--panel-border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div>
+                  <strong>@{s.x_handle}</strong> submitted by <em>@{s.profiles?.username || 'unknown'}</em>
+                </div>
+                <span className="badge badge-yellow">{s.status}</span>
+              </div>
+              
+              <div style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
+                <button className="btn" style={{ background: 'rgba(0, 230, 118, 0.1)', color: 'var(--accent-green)', border: '1px solid rgba(0, 230, 118, 0.3)' }} onClick={() => handleHostSubmission(s.id, s.x_handle, 'approve')}>
+                  Approve Host
+                </button>
+                <button className="btn btn-outline" onClick={() => handleHostSubmission(s.id, s.x_handle, 'reject')}>
+                  Reject
                 </button>
               </div>
             </div>

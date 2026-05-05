@@ -8,6 +8,8 @@ TrustIndex is building the "Reputation Layer" for social media commerce and enga
 ## **📍 Current State: Version 1.0 (MVP)**
 What you see today is a community-driven accountability platform built on a modern stack (React, Supabase, Glassmorphism UI).
 *   **Community Reporting:** Users flag suspicious accounts with image proof.
+*   **Host Promotion:** Dedicated track for users to submit reputable hosts for verification.
+*   **Ephemeral Feedback:** Reports automatically clear every 72 hours, ensuring the community always sees the most current and relevant data.
 *   **Trust Scoring:** A dynamic algorithm that calculates reputation based on community votes and admin verification.
 *   **High-Fidelity UX:** A premium, motion-rich interface designed to build immediate credibility with Gen-Z and Crypto-native users.
 *   **Proof Tracking:** Decentralized storage for "scam evidence" to prevent deletion by bad actors.

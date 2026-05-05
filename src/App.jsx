@@ -6,13 +6,16 @@ import Home from './pages/Home';
 import Profile from './pages/Profile';
 import Admin from './pages/Admin';
 import Report from './pages/Report';
+import Promote from './pages/Promote';
+import HallOfFame from './pages/HallOfFame';
+import WallOfShame from './pages/WallOfShame';
+import RecentReports from './pages/RecentReports';
 
 function Navigation() {
   const { isAdmin } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
 
-  // Close menu when route changes
   useEffect(() => {
     setIsOpen(false);
   }, [location.pathname]);
@@ -20,7 +23,7 @@ function Navigation() {
   return (
     <header className="nav-header">
       <Link to="/" className="nav-brand">
-        <ShieldAlert color="#2979ff" size={28} />
+        <ShieldAlert color="var(--accent-blue)" size={28} />
         <span>TrustIndex</span>
       </Link>
 
@@ -34,6 +37,7 @@ function Navigation() {
             <ShieldCheck size={18} /> Admin
           </Link>
         )}
+        <Link to="/promote" className="btn btn-outline">Add Your Host</Link>
         <Link to="/report" className="btn btn-outline">Report Giveaway</Link>
         <Link to="/profile" className="btn btn-primary">
           <User size={18} /> Profile
@@ -60,7 +64,7 @@ function App() {
         <div style={{ minHeight: '100vh', background: 'var(--bg-color)', display: 'flex', flexDirection: 'column' }}>
           <header className="nav-header" style={{ justifyContent: 'center' }}>
             <div className="nav-brand">
-              <ShieldAlert color="#2979ff" size={28} />
+              <ShieldAlert color="var(--accent-blue)" size={28} />
               <span>TrustIndex</span>
             </div>
           </header>
@@ -77,6 +81,10 @@ function App() {
               <Route path="/profile" element={<Profile />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/report" element={<Report />} />
+              <Route path="/promote" element={<Promote />} />
+              <Route path="/hall-of-fame" element={<HallOfFame />} />
+              <Route path="/wall-of-shame" element={<WallOfShame />} />
+              <Route path="/recent-reports" element={<RecentReports />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>

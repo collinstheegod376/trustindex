@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../supabase'
-import { AlertCircle, Link as LinkIcon, FileText, Send, Upload, X, Image as ImageIcon } from 'lucide-react'
+import { AlertCircle, Link as LinkIcon, FileText, Send, Upload, X, Image as ImageIcon, ArrowLeft } from 'lucide-react'
 
 export default function Report() {
   const [searchParams] = useSearchParams()
@@ -92,11 +92,15 @@ export default function Report() {
   }
 
   return (
-    <div className="glass-panel" style={{ maxWidth: '600px', margin: '40px auto' }}>
-      <h2>Report a Giveaway</h2>
-      <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>
-        Help the community by flagging fake giveaways. Please provide as much proof as possible.
-      </p>
+    <div className="container" style={{ maxWidth: '680px', animation: 'fadeInUp 0.8s ease-out both' }}>
+      <Link to="/" className="btn btn-outline" style={{ marginBottom: '32px' }}>
+        <ArrowLeft size={18} /> Back to Dashboard
+      </Link>
+      <div className="glass-panel" style={{ padding: '40px' }}>
+        <h2>Report a Giveaway</h2>
+        <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>
+          Help the community by flagging fake giveaways. Please provide as much proof as possible.
+        </p>
 
       {message.text && (
         <div className={`alert alert-${message.type}`} style={{ padding: '12px', borderRadius: '8px', marginBottom: '20px' }}>
@@ -215,6 +219,7 @@ export default function Report() {
           {loading ? 'Submitting...' : <><Send size={18} /> Submit Report</>}
         </button>
       </form>
+      </div>
     </div>
   )
 }

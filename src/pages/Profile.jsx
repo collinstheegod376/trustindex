@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { LogIn, UserPlus, Upload, ShieldCheck, LogOut } from 'lucide-react'
+import { LogIn, UserPlus, Upload, ShieldCheck, LogOut, ArrowLeft } from 'lucide-react'
 import './Profile.css'
 
 export default function Profile() {
@@ -139,6 +139,9 @@ export default function Profile() {
 
   return (
     <div className="profile-container">
+      <Link to="/" className="btn btn-outline" style={{ marginBottom: '32px' }}>
+        <ArrowLeft size={18} /> Back to Dashboard
+      </Link>
       <div className="glass-panel profile-panel">
         <div className="profile-header">
           <div className="avatar-section">

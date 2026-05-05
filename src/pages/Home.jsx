@@ -36,7 +36,7 @@ function StatusIcon({ status }) {
   return <AlertTriangle size={18} color="#ffd600" />
 }
 
-import { ArrowBigUp, ArrowBigDown } from 'lucide-react'
+import { ThumbsUp, ThumbsDown } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function Home() {
@@ -55,10 +55,12 @@ export default function Home() {
   }, [user])
 
   async function loadDashboard() {
+    const seventyTwoHoursAgo = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString();
+
     const [verifiedRes, scamRes, reportsRes, allRes] = await Promise.all([
       supabase.from('tracked_accounts').select('*').eq('status', 'verified').order('trust_score', { ascending: false }).limit(5),
       supabase.from('tracked_accounts').select('*').eq('status', 'scam').order('trust_score', { ascending: true }).limit(5),
-      supabase.from('reports').select('*, tracked_accounts(x_handle), profiles(username, x_handle), votes(vote_type)').eq('status', 'approved').order('created_at', { ascending: false }).limit(10),
+      supabase.from('reports').select('*, tracked_accounts(x_handle), profiles(username, x_handle), votes(vote_type)').eq('status', 'approved').gt('created_at', seventyTwoHoursAgo).order('created_at', { ascending: false }).limit(10),
       supabase.from('tracked_accounts').select('id, status')
     ])
 
@@ -68,7 +70,7 @@ export default function Home() {
       const upvotes = votes.filter(v => v.vote_type === 1).length;
       const downvotes = votes.filter(v => v.vote_type === -1).length;
       return { ...r, upvotes, downvotes, score: upvotes - downvotes };
-    }).sort((a, b) => b.score - a.score)
+    }).sort((a, b) => b.score - a.score).slice(0, 5)
 
     setTopVerified(verifiedRes.data || [])
     setTopScams(scamRes.data || [])
@@ -155,6 +157,7 @@ export default function Home() {
           />
           {searching && <span className="spinner" style={{width: '16px', height: '16px', border: '2px solid var(--accent-blue)', borderTopColor: 'transparent', borderRadius: '50%'}}></span>}
         </form>
+
       </section>
 
       {/* Search Results */}
@@ -239,6 +242,9 @@ export default function Home() {
               <span className="badge badge-green">{a.trust_score}</span>
             </div>
           ))}
+          <Link to="/hall-of-fame" className="btn btn-outline" style={{ width: '100%', marginTop: '20px', borderStyle: 'dashed' }}>
+            View Hall of Fame <ArrowRight size={16} />
+          </Link>
         </div>
         <div className="board glass-panel">
           <h3><TrendingDown size={20} color="var(--accent-red)" /> Wall of Shame</h3>
@@ -258,6 +264,9 @@ export default function Home() {
               <span className="badge badge-red">{a.trust_score}</span>
             </div>
           ))}
+          <Link to="/wall-of-shame" className="btn btn-outline" style={{ width: '100%', marginTop: '20px', borderStyle: 'dashed' }}>
+            View Wall of Shame <ArrowRight size={16} />
+          </Link>
         </div>
       </section>
 
@@ -269,39 +278,37 @@ export default function Home() {
           <div key={r.id} className="report-row glass-panel report-with-vote" style={{ animation: 'fadeInUp 0.6s ease-out both', animationDelay: `${i * 0.1}s` }}>
             <div className="vote-column">
               <button 
-                className={`vote-btn ${userVotes[r.id] === 1 ? 'active-up' : ''}`}
+                className={`vote-btn upvote ${userVotes[r.id] === 1 ? 'active' : ''}`}
                 onClick={() => handleVote(r.id, 1)}
               >
-                <ArrowBigUp size={24} fill={userVotes[r.id] === 1 ? 'currentColor' : 'none'} />
+                <ThumbsUp size={20} fill={userVotes[r.id] === 1 ? 'currentColor' : 'none'} />
               </button>
               <span className="vote-count">{r.score}</span>
               <button 
-                className={`vote-btn ${userVotes[r.id] === -1 ? 'active-down' : ''}`}
+                className={`vote-btn downvote ${userVotes[r.id] === -1 ? 'active' : ''}`}
                 onClick={() => handleVote(r.id, -1)}
               >
-                <ArrowBigDown size={24} fill={userVotes[r.id] === -1 ? 'currentColor' : 'none'} />
+                <ThumbsDown size={20} fill={userVotes[r.id] === -1 ? 'currentColor' : 'none'} />
               </button>
             </div>
             <div className="report-content">
               <div className="report-meta">
-                {r.profiles?.x_handle ? (
-                  <a 
-                    href={`https://x.com/${r.profiles.x_handle}`} 
-                    target="_blank" 
-                    rel="noreferrer" 
-                    className="report-reporter external-link"
-                  >
-                    @{r.profiles?.username || 'anonymous'}
-                  </a>
-                ) : (
-                  <span className="report-reporter">@{r.profiles?.username || 'anonymous'}</span>
-                )}
+                <a 
+                  href={`https://x.com/${r.profiles?.x_handle || r.profiles?.username}`} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="report-reporter hover-glow"
+                  style={{ color: 'var(--accent-blue)', textDecoration: 'none' }}
+                >
+                  @{r.profiles?.username || 'anonymous'}
+                </a>
                 <span className="report-arrow">→</span>
                 <a 
                   href={`https://x.com/${r.tracked_accounts?.x_handle}`} 
                   target="_blank" 
                   rel="noreferrer" 
-                  className="report-target external-link"
+                  className="report-target hover-glow"
+                  style={{ color: 'inherit', textDecoration: 'none', fontWeight: 'bold' }}
                 >
                   @{r.tracked_accounts?.x_handle || 'unknown'}
                 </a>
@@ -337,6 +344,9 @@ export default function Home() {
             </div>
           </div>
         ))}
+        <Link to="/recent-reports" className="btn btn-primary" style={{ width: '100%', marginTop: '32px', height: '56px', fontSize: '1.1rem' }}>
+          View All Recent Reports <ArrowRight size={20} />
+        </Link>
       </section>
     </div>
   )
