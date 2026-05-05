@@ -13,13 +13,13 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
-      if (session?.user) fetchProfile(session.user.id)
+      if (session?.user) fetchProfile(session.user.id, session.user)
       else setLoading(false)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
-      if (session?.user) fetchProfile(session.user.id)
+      if (session?.user) fetchProfile(session.user.id, session.user)
       else {
         setProfile(null)
         setLoading(false)
@@ -29,12 +29,29 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe()
   }, [])
 
-  async function fetchProfile(userId) {
-    const { data } = await supabase
+  async function fetchProfile(userId, authUser) {
+    let { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single()
+
+    // Profile row doesn't exist yet — create it from auth metadata
+    if (error && error.code === 'PGRST116') {
+      const meta = authUser?.user_metadata || {}
+      const { data: newProfile } = await supabase
+        .from('profiles')
+        .upsert({
+          id: userId,
+          username: meta.username || '',
+          avatar_url: meta.avatar_url || '',
+          role: 'user'
+        })
+        .select()
+        .single()
+      data = newProfile
+    }
+
     setProfile(data)
     setLoading(false)
   }
@@ -64,8 +81,7 @@ export function AuthProvider({ children }) {
   async function updateProfile(updates) {
     const { data, error } = await supabase
       .from('profiles')
-      .update(updates)
-      .eq('id', user.id)
+      .upsert({ id: user.id, ...updates })
       .select()
       .single()
     if (!error) setProfile(data)

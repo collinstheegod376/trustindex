@@ -86,6 +86,24 @@ create trigger on_auth_user_created
   for each row execute procedure public.handle_new_user();
 ```
 
+### 4. Storage Bucket (For Profile Pictures)
+
+Run this SQL to create the `avatars` bucket and give it the correct permissions so users can upload pictures:
+
+```sql
+-- Create the storage bucket
+insert into storage.buckets (id, name, public) values ('avatars', 'avatars', true);
+
+-- Allow public read access to the avatars
+create policy "Public Access" on storage.objects for select using ( bucket_id = 'avatars' );
+
+-- Allow authenticated users to upload files
+create policy "Auth Upload" on storage.objects for insert with check ( bucket_id = 'avatars' and auth.role() = 'authenticated' );
+
+-- Allow authenticated users to update files
+create policy "Auth Update" on storage.objects for update with check ( bucket_id = 'avatars' and auth.role() = 'authenticated' );
+```
+
 ## Getting Started
 
 1. Set up your Supabase project with the schema above.

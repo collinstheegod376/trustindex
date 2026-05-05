@@ -229,6 +229,55 @@
   margin-bottom: 8px;
 }
 
+.report-with-vote {
+  display: flex;
+  gap: 20px;
+}
+
+.vote-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.vote-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vote-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-main);
+}
+
+.vote-btn.active-up {
+  color: var(--accent-green);
+}
+
+.vote-btn.active-down {
+  color: var(--accent-red);
+}
+
+.vote-count {
+  font-weight: 800;
+  font-size: 0.95rem;
+  min-width: 24px;
+  text-align: center;
+}
+
+.report-content {
+  flex: 1;
+}
+
 .report-footer {
   display: flex;
   justify-content: space-between;

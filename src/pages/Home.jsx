@@ -36,7 +36,11 @@ function StatusIcon({ status }) {
   return <AlertTriangle size={18} color="#ffd600" />
 }
 
+import { ArrowBigUp, ArrowBigDown } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
+
 export default function Home() {
+  const { user } = useAuth()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
   const [searching, setSearching] = useState(false)
@@ -44,22 +48,37 @@ export default function Home() {
   const [topScams, setTopScams] = useState([])
   const [recentReports, setRecentReports] = useState([])
   const [stats, setStats] = useState({ total: 0, scams: 0, verified: 0 })
+  const [userVotes, setUserVotes] = useState({}) // { reportId: voteType }
 
   useEffect(() => {
     loadDashboard()
-  }, [])
+  }, [user])
 
   async function loadDashboard() {
     const [verifiedRes, scamRes, reportsRes, allRes] = await Promise.all([
       supabase.from('tracked_accounts').select('*').eq('status', 'verified').order('trust_score', { ascending: false }).limit(5),
       supabase.from('tracked_accounts').select('*').eq('status', 'scam').order('trust_score', { ascending: true }).limit(5),
-      supabase.from('reports').select('*, tracked_accounts(x_handle), profiles(username)').order('created_at', { ascending: false }).limit(5),
+      supabase.from('reports').select('*, tracked_accounts(x_handle), profiles(username), votes(vote_type)').order('created_at', { ascending: false }).limit(10),
       supabase.from('tracked_accounts').select('id, status')
     ])
 
+    // Process reports to sum votes
+    const processedReports = (reportsRes.data || []).map(r => {
+      const upvotes = r.votes.filter(v => v.vote_type === 1).length
+      const downvotes = r.votes.filter(v => v.vote_type === -1).length
+      return { ...r, voteCount: upvotes - downvotes }
+    })
+
     setTopVerified(verifiedRes.data || [])
     setTopScams(scamRes.data || [])
-    setRecentReports(reportsRes.data || [])
+    setRecentReports(processedReports)
+
+    if (user) {
+      const { data: vData } = await supabase.from('votes').select('report_id, vote_type').eq('user_id', user.id)
+      const vMap = {}
+      vData?.forEach(v => vMap[v.report_id] = v.vote_type)
+      setUserVotes(vMap)
+    }
 
     const all = allRes.data || []
     setStats({
@@ -67,6 +86,26 @@ export default function Home() {
       scams: all.filter(a => a.status === 'scam').length,
       verified: all.filter(a => a.status === 'verified').length
     })
+  }
+
+  async function handleVote(reportId, voteType) {
+    if (!user) return alert('Please sign in to vote')
+
+    const currentVote = userVotes[reportId]
+    if (currentVote === voteType) {
+      // Remove vote
+      await supabase.from('votes').delete().eq('report_id', reportId).eq('user_id', user.id)
+      setUserVotes(prev => {
+        const next = { ...prev }
+        delete next[reportId]
+        return next
+      })
+    } else {
+      // Upsert vote
+      await supabase.from('votes').upsert({ report_id: reportId, user_id: user.id, vote_type: voteType })
+      setUserVotes(prev => ({ ...prev, [reportId]: voteType }))
+    }
+    loadDashboard() // Refresh counts
   }
 
   async function handleSearch(e) {
@@ -192,19 +231,36 @@ export default function Home() {
         <h2>Recent Reports</h2>
         {recentReports.length === 0 && <p className="empty-msg">No reports filed yet. Be the first!</p>}
         {recentReports.map(r => (
-          <div key={r.id} className="report-row glass-panel">
-            <div className="report-meta">
-              <span className="report-reporter">@{r.profiles?.username || 'anonymous'}</span>
-              <span className="report-arrow">→</span>
-              <span className="report-target">@{r.tracked_accounts?.x_handle || 'unknown'}</span>
+          <div key={r.id} className="report-row glass-panel report-with-vote">
+            <div className="vote-column">
+              <button 
+                className={`vote-btn ${userVotes[r.id] === 1 ? 'active-up' : ''}`}
+                onClick={() => handleVote(r.id, 1)}
+              >
+                <ArrowBigUp size={24} fill={userVotes[r.id] === 1 ? 'currentColor' : 'none'} />
+              </button>
+              <span className="vote-count">{r.voteCount}</span>
+              <button 
+                className={`vote-btn ${userVotes[r.id] === -1 ? 'active-down' : ''}`}
+                onClick={() => handleVote(r.id, -1)}
+              >
+                <ArrowBigDown size={24} fill={userVotes[r.id] === -1 ? 'currentColor' : 'none'} />
+              </button>
             </div>
-            <p className="report-reason">{r.reason}</p>
-            {r.notes && <p className="report-notes">{r.notes}</p>}
-            <div className="report-footer">
-              <span className={`badge badge-${r.status === 'approved' ? 'green' : r.status === 'rejected' ? 'red' : 'yellow'}`}>
-                {r.status}
-              </span>
-              <span className="report-date">{new Date(r.created_at).toLocaleDateString()}</span>
+            <div className="report-content">
+              <div className="report-meta">
+                <span className="report-reporter">@{r.profiles?.username || 'anonymous'}</span>
+                <span className="report-arrow">→</span>
+                <span className="report-target">@{r.tracked_accounts?.x_handle || 'unknown'}</span>
+              </div>
+              <p className="report-reason">{r.reason}</p>
+              {r.notes && <p className="report-notes">{r.notes}</p>}
+              <div className="report-footer">
+                <span className={`badge badge-${r.status === 'approved' ? 'green' : r.status === 'rejected' ? 'red' : 'yellow'}`}>
+                  {r.status}
+                </span>
+                <span className="report-date">{new Date(r.created_at).toLocaleDateString()}</span>
+              </div>
             </div>
           </div>
         ))}
