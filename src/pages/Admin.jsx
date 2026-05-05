@@ -40,8 +40,8 @@ export default function Admin() {
     const [repsRes, accsRes, subsRes, chatsRes] = await Promise.all([
       supabase.from('reports').select('*, tracked_accounts(x_handle, status), profiles(username)').eq('status', 'pending').order('created_at', { ascending: false }),
       supabase.from('tracked_accounts').select('*').order('trust_score', { ascending: true }),
-      supabase.from('host_submissions').select('*').order('created_at', { ascending: false }),
-      supabase.from('support_chats').select('*').gt('created_at', rangeAgo).order('created_at', { ascending: true })
+      supabase.from('host_submissions').select('*, profiles(username)').order('created_at', { ascending: false }),
+      supabase.from('support_chats').select('*, profiles(username)').gt('created_at', rangeAgo).order('created_at', { ascending: true })
     ])
 
     if (chatsRes.error) console.error('Chats Error:', chatsRes.error)
@@ -112,22 +112,17 @@ export default function Admin() {
         return
       }
 
-      let newReportStatus = 'approved'
-
       if (action === 'approve_scam') {
         const { error: accError } = await supabase.from('tracked_accounts').update({ 
           status: 'scam', 
           trust_score: 10 
         }).eq('id', accountId)
         if (accError) throw accError
-      } else if (action === 'approve_legit') {
-        const { error: accError } = await supabase.from('tracked_accounts').update({ 
-          status: 'verified', 
-          trust_score: 90 
-        }).eq('id', accountId)
-        if (accError) throw accError
       }
 
+      const { error: repError } = await supabase.from('reports').update({ status: 'approved' }).eq('id', reportId)
+      if (repError) throw repError
+      
       fetchData()
     } catch (error) {
       alert('Error performing action: ' + error.message)
@@ -189,13 +184,18 @@ export default function Admin() {
         )}
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {Array.from(new Set(supportChats.map(c => c.user_id))).map(uid => (
+          {Array.from(new Set(supportChats.map(c => c.user_id))).map(uid => {
+            const userMessages = supportChats.filter(c => c.user_id === uid)
+            const firstUserMsg = userMessages.find(m => m.profiles?.username)
+            const displayName = firstUserMsg ? `@${firstUserMsg.profiles.username}` : `User ${uid.slice(0, 5)}`
+            
+            return (
             <div key={uid} style={{ background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '12px', border: '1px solid var(--panel-border)' }}>
-              <div style={{ marginBottom: '16px', fontWeight: 'bold', color: 'var(--accent-blue)' }}>User: {uid.slice(0, 8)}...</div>
+              <div style={{ marginBottom: '16px', fontWeight: 'bold', color: 'var(--accent-blue)' }}>{displayName}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '200px', overflowY: 'auto', marginBottom: '16px', padding: '10px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px' }}>
-                {supportChats.filter(c => c.user_id === uid).map(c => (
+                {userMessages.map(c => (
                   <div key={c.id} style={{ alignSelf: c.is_admin ? 'flex-end' : 'flex-start', color: c.is_admin ? 'var(--accent-green)' : 'white', fontSize: '0.9rem' }}>
-                    <strong>{c.is_admin ? 'Admin' : 'User'}:</strong> {c.message}
+                    <strong>{c.is_admin ? 'Admin' : displayName}:</strong> {c.message}
                   </div>
                 ))}
               </div>
@@ -213,7 +213,8 @@ export default function Admin() {
                 </button>
               </div>
             </div>
-          ))}
+            )
+          })}
         </div>
       </section>
       
@@ -265,13 +266,10 @@ export default function Admin() {
               
               <div style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
                 <button className="btn btn-danger" onClick={() => handleReportAction(r.id, r.tracked_account_id, 'approve_scam')}>
-                  <ShieldAlert size={16} /> Confirm as Scam
-                </button>
-                <button className="btn" style={{ background: 'rgba(0, 230, 118, 0.1)', color: 'var(--accent-green)', border: '1px solid rgba(0, 230, 118, 0.3)' }} onClick={() => handleReportAction(r.id, r.tracked_account_id, 'approve_legit')}>
-                  <ShieldCheck size={16} /> Confirm as Legit
+                  <ShieldAlert size={16} /> Accept Report
                 </button>
                 <button className="btn btn-outline" onClick={() => handleReportAction(r.id, r.tracked_account_id, 'reject')}>
-                  Reject Report
+                  Reject
                 </button>
               </div>
             </div>

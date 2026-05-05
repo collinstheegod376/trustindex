@@ -38,7 +38,7 @@ function Navigation() {
       
       if (data?.[0]) {
         const lastRead = localStorage.getItem(`last_read_${user.id}`);
-        if (lastRead !== data[0].id) setHasNewMsg(true);
+        if (lastRead !== data[0].id && location.pathname !== '/support') setHasNewMsg(true);
       }
     };
 
@@ -47,7 +47,7 @@ function Navigation() {
     const sub = supabase
       .channel('nav_notifs')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_chats' }, payload => {
-        if (payload.new.user_id === user.id && payload.new.is_admin) {
+        if (payload.new.user_id === user.id && payload.new.is_admin && location.pathname !== '/support') {
           setHasNewMsg(true);
         }
       })
@@ -64,7 +64,7 @@ function Navigation() {
     <header className="nav-header">
       <Link to="/" className="nav-brand">
         <ShieldAlert color="var(--accent-blue)" size={28} />
-        <span>TrustIndex</span>
+        <span>LarpFinder</span>
       </Link>
 
       <button className="mobile-menu-btn" onClick={() => setIsOpen(!isOpen)} style={{ position: 'relative' }}>
@@ -117,7 +117,7 @@ function App() {
           <header className="nav-header" style={{ justifyContent: 'center' }}>
             <div className="nav-brand">
               <ShieldAlert color="var(--accent-blue)" size={28} />
-              <span>TrustIndex</span>
+              <span>LarpFinder</span>
             </div>
           </header>
           <main className="container" style={{ flex: 1, display: 'flex', alignItems: 'center' }}>

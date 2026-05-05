@@ -14,14 +14,12 @@ export default function Support() {
   useEffect(() => {
     if (user) {
       fetchMessages()
-      markAsRead()
       
       const subscription = supabase
         .channel('support_chats_page')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_chats' }, payload => {
           if (payload.new.user_id === user.id) {
             setMessages(prev => [...prev, payload.new])
-            markAsRead()
           }
         })
         .subscribe()
@@ -50,14 +48,12 @@ export default function Support() {
     setMessages(data || [])
   }
 
-  async function markAsRead() {
-    // In a real app we'd have an 'is_read' column. 
-    // For this ephemeral version, we'll use local storage to track the last seen message ID
-    if (messages.length > 0) {
+  useEffect(() => {
+    if (messages.length > 0 && user) {
       const lastMsg = messages[messages.length - 1]
       localStorage.setItem(`last_read_${user.id}`, lastMsg.id)
     }
-  }
+  }, [messages, user])
 
   async function handleSend(e) {
     e.preventDefault()
