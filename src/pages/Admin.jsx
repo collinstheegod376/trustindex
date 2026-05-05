@@ -38,9 +38,9 @@ export default function Admin() {
     const rangeAgo = new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString()
     
     const [repsRes, accsRes, subsRes, chatsRes] = await Promise.all([
-      supabase.from('reports').select('*, tracked_accounts(x_handle, status), profiles(username)').eq('status', 'pending').order('created_at', { ascending: false }),
+      supabase.from('reports').select('*, tracked_accounts(x_handle, status)').eq('status', 'pending').order('created_at', { ascending: false }),
       supabase.from('tracked_accounts').select('*').order('trust_score', { ascending: true }),
-      supabase.from('host_submissions').select('*, profiles(username)').order('created_at', { ascending: false }),
+      supabase.from('host_submissions').select('*').order('created_at', { ascending: false }),
       supabase.from('support_chats').select('*, profiles(username)').gt('created_at', rangeAgo).order('created_at', { ascending: true })
     ])
 
@@ -254,9 +254,7 @@ export default function Admin() {
           {reports.map(r => (
             <div key={r.id} style={{ background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '8px', border: '1px solid var(--panel-border)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                <div>
-                  <strong>@{r.tracked_accounts.x_handle}</strong> reported by <em>@{r.profiles.username}</em>
-                </div>
+                  <strong>@{r.tracked_accounts.x_handle}</strong> reported by <em>User {r.user_id?.slice(0,5)}</em>
                 <span className="badge badge-yellow">{r.status}</span>
               </div>
               <p><strong>Reason:</strong> {r.reason}</p>
@@ -288,7 +286,7 @@ export default function Admin() {
                 <div>
                   <a href={`https://x.com/${s.x_handle}`} target="_blank" rel="noopener noreferrer" className="hover-glow" style={{ textDecoration: 'none', color: 'inherit' }}>
                     <strong>@{s.x_handle}</strong>
-                  </a> submitted by <em>{s.profiles?.username ? `@${s.profiles.username}` : `User ${s.user_id.slice(0, 5)}`}</em>
+                  </a> submitted by <em>User {s.user_id?.slice(0, 5)}</em>
                 </div>
                 <span className="badge badge-yellow">{s.status}</span>
               </div>
@@ -317,7 +315,7 @@ export default function Admin() {
                 <div>
                   <a href={`https://x.com/${s.x_handle}`} target="_blank" rel="noopener noreferrer" className="hover-glow" style={{ textDecoration: 'none', color: 'inherit' }}>
                     <strong>@{s.x_handle}</strong>
-                  </a> flagged by <em>{s.profiles?.username ? `@${s.profiles.username}` : `User ${s.user_id.slice(0, 5)}`}</em>
+                  </a> flagged by <em>User {s.user_id?.slice(0, 5)}</em>
                 </div>
                 <span className="badge badge-red">FLAGGED</span>
               </div>

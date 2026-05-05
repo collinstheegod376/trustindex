@@ -4,9 +4,12 @@ import { Search, ShieldCheck, ShieldAlert, AlertTriangle, TrendingUp, TrendingDo
 import { Link } from 'react-router-dom'
 import './Home.css'
 
-function TrustGauge({ score }) {
-  const color = score >= 70 ? '#00e676' : score >= 31 ? '#ffd600' : '#ff3d00'
-  const label = score >= 70 ? 'VERIFIED' : score >= 31 ? 'SUSPICIOUS' : 'SCAM'
+function TrustGauge({ score, status }) {
+  const isScam = status === 'scam'
+  const isVerified = status === 'verified'
+
+  const color = isScam ? '#ff3d00' : isVerified ? '#00e676' : score >= 70 ? '#00e676' : score >= 31 ? '#ffd600' : '#ff3d00'
+  const label = isScam ? 'SCAM' : isVerified ? 'VERIFIED' : score >= 70 ? 'VERIFIED' : score >= 31 ? 'SUSPICIOUS' : 'SCAM'
   const circumference = 2 * Math.PI * 45
   const offset = circumference - (score / 100) * circumference
 
@@ -183,7 +186,7 @@ export default function Home() {
                     {account.status}
                   </span>
                 </div>
-                <TrustGauge score={account.trust_score} />
+                <TrustGauge score={account.trust_score} status={account.status} />
                 <Link to={`/report?handle=${account.x_handle}`} className="btn btn-outline" style={{ width: '100%' }}>
                   Report This Account <ArrowRight size={16} />
                 </Link>

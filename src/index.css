@@ -411,6 +411,9 @@ table {
   margin-bottom: 20px;
   font-size: 0.95rem;
   border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .alert-error {

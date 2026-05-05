@@ -1,0 +1,17 @@
+{
+  "name": "LarpFinder",
+  "short_name": "LarpFinder",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0f",
+  "theme_color": "#2979ff",
+  "description": "The ultimate X Giveaway tracking and reporting tool.",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

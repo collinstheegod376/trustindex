@@ -5,7 +5,7 @@ import { ArrowLeft, MessageSquare, ThumbsUp, ThumbsDown } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 export default function RecentReports() {
-  const { user } = useAuth()
+  const { user, isAdmin } = useAuth()
   const [reports, setReports] = useState([])
   const [userVotes, setUserVotes] = useState({})
   const [loading, setLoading] = useState(true)
@@ -56,6 +56,13 @@ export default function RecentReports() {
     }, { onConflict: 'user_id,report_id' })
 
     if (!error) fetchReports()
+  }
+
+  async function handleDelete(reportId) {
+    if (!window.confirm('Are you sure you want to delete this report from the community feed?')) return;
+    const { error } = await supabase.from('reports').delete().eq('id', reportId);
+    if (!error) fetchReports();
+    else alert('Error: ' + error.message);
   }
 
   return (
@@ -143,6 +150,11 @@ export default function RecentReports() {
                         >
                           View Original Post
                         </a>
+                      )}
+                      {isAdmin && (
+                        <button className="btn btn-danger" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => handleDelete(r.id)}>
+                          Delete Report
+                        </button>
                       )}
                     </div>
                   </div>
