@@ -37,24 +37,31 @@ export default function Admin() {
   }
 
   async function handleReportAction(reportId, accountId, action) {
-    // action: 'approve_scam', 'approve_legit', 'reject'
-    let newReportStatus = action === 'reject' ? 'rejected' : 'approved'
-    
-    await supabase.from('reports').update({ status: newReportStatus }).eq('id', reportId)
+    try {
+      // action: 'approve_scam', 'approve_legit', 'reject'
+      let newReportStatus = action === 'reject' ? 'rejected' : 'approved'
+      
+      const { error: repError } = await supabase.from('reports').update({ status: newReportStatus }).eq('id', reportId)
+      if (repError) throw repError
 
-    if (action === 'approve_scam') {
-      await supabase.from('tracked_accounts').update({ 
-        status: 'scam', 
-        trust_score: 10 // Drop score heavily
-      }).eq('id', accountId)
-    } else if (action === 'approve_legit') {
-      await supabase.from('tracked_accounts').update({ 
-        status: 'verified', 
-        trust_score: 90 // Boost score
-      }).eq('id', accountId)
+      if (action === 'approve_scam') {
+        const { error: accError } = await supabase.from('tracked_accounts').update({ 
+          status: 'scam', 
+          trust_score: 10 
+        }).eq('id', accountId)
+        if (accError) throw accError
+      } else if (action === 'approve_legit') {
+        const { error: accError } = await supabase.from('tracked_accounts').update({ 
+          status: 'verified', 
+          trust_score: 90 
+        }).eq('id', accountId)
+        if (accError) throw accError
+      }
+
+      fetchData()
+    } catch (error) {
+      alert('Error performing action: ' + error.message)
     }
-
-    fetchData() // refresh
   }
 
   async function handleAddAccount(e) {

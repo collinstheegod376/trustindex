@@ -108,6 +108,31 @@ insert into storage.buckets (id, name, public) values ('proofs', 'proofs', true)
 create policy "Public Access Proofs" on storage.objects for select using ( bucket_id = 'proofs' );
 create policy "Auth Upload Proofs" on storage.objects for insert with check ( bucket_id = 'proofs' and auth.role() = 'authenticated' );
 
+-- 6. RLS Policies (Run these to make the data visible!)
+-- Profiles: Everyone can see profiles, only owners can update
+alter table public.profiles enable row level security;
+create policy "Public Profiles" on public.profiles for select using (true);
+create policy "Update Own Profile" on public.profiles for update using (auth.uid() = id);
+
+-- Tracked Accounts: Everyone can see, only admins can modify
+alter table public.tracked_accounts enable row level security;
+create policy "Public Tracked Accounts" on public.tracked_accounts for select using (true);
+create policy "Admin Modify Tracked" on public.tracked_accounts for all using (
+  exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+);
+
+-- Reports: Everyone can see, authenticated can insert, admins can modify
+alter table public.reports enable row level security;
+create policy "Public Reports" on public.reports for select using (true);
+create policy "Auth Insert Reports" on public.reports for insert with check (auth.role() = 'authenticated');
+create policy "Admin Modify Reports" on public.reports for all using (
+  exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+);
+
+-- Votes: Everyone can see, authenticated can insert/update/delete own
+alter table public.votes enable row level security;
+create policy "Public Votes" on public.votes for select using (true);
+create policy "User Vote Actions" on public.votes for all using (auth.uid() = user_id);
 ```
 
 ## Getting Started
