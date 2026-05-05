@@ -191,21 +191,35 @@ export default function Admin() {
                     </span>
                   </td>
                   <td style={{ padding: '12px' }}>
-                    <select 
-                      className="input-field" 
-                      style={{ padding: '4px 8px', width: 'auto' }}
-                      value={a.status}
-                      onChange={async (e) => {
-                        const newStatus = e.target.value;
-                        const newScore = newStatus === 'verified' ? 90 : newStatus === 'scam' ? 10 : 50;
-                        await supabase.from('tracked_accounts').update({ status: newStatus, trust_score: newScore }).eq('id', a.id);
-                        fetchData();
-                      }}
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="verified">Verified</option>
-                      <option value="scam">Scam</option>
-                    </select>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <select 
+                        className="input-field" 
+                        style={{ padding: '4px 8px', width: 'auto' }}
+                        value={a.status}
+                        onChange={async (e) => {
+                          const newStatus = e.target.value;
+                          const newScore = newStatus === 'verified' ? 90 : newStatus === 'scam' ? 10 : 50;
+                          await supabase.from('tracked_accounts').update({ status: newStatus, trust_score: newScore }).eq('id', a.id);
+                          fetchData();
+                        }}
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="verified">Verified</option>
+                        <option value="scam">Scam</option>
+                      </select>
+                      <button 
+                        className="btn btn-danger" 
+                        style={{ padding: '6px 10px', fontSize: '0.8rem' }}
+                        onClick={async () => {
+                          if (window.confirm(`Are you sure you want to delete @${a.x_handle}?`)) {
+                            await supabase.from('tracked_accounts').delete().eq('id', a.id);
+                            fetchData();
+                          }
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

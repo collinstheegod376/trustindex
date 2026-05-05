@@ -6,7 +6,7 @@ import './Profile.css'
 
 export default function Profile() {
   const navigate = useNavigate()
-  const { user, profile, signIn, signUp, signOut, updateProfile, uploadAvatar } = useAuth()
+  const { user, profile, signIn, signUp, signOut, updateProfile, uploadAvatar, theme, setTheme } = useAuth()
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -15,10 +15,14 @@ export default function Profile() {
   const [message, setMessage] = useState({ type: '', text: '' })
 
   const [editUsername, setEditUsername] = useState('')
+  const [editXHandle, setEditXHandle] = useState('')
   const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
-    if (profile) setEditUsername(profile.username || '')
+    if (profile) {
+      setEditUsername(profile.username || '')
+      setEditXHandle(profile.x_handle || '')
+    }
   }, [profile])
 
   async function handleAuth(e) {
@@ -43,7 +47,10 @@ export default function Profile() {
   async function handleUpdateProfile(e) {
     e.preventDefault()
     setLoading(true)
-    const { error } = await updateProfile({ username: editUsername })
+    const { error } = await updateProfile({ 
+      username: editUsername, 
+      x_handle: editXHandle.replace('@', '').trim() 
+    })
     if (error) setMessage({ type: 'error', text: error.message })
     else {
       setMessage({ type: 'success', text: 'Profile updated!' })
@@ -59,6 +66,7 @@ export default function Profile() {
       const file = e.target.files[0]
       const { error } = await uploadAvatar(file)
       if (error) setMessage({ type: 'error', text: error.message })
+      else setMessage({ type: 'success', text: 'Avatar uploaded!' })
     } finally {
       setUploading(false)
     }
@@ -136,7 +144,7 @@ export default function Profile() {
           <div className="avatar-section">
             <div className="avatar-wrapper">
               {profile?.avatar_url ? (
-                <img src={profile.avatar_url} alt="Avatar" className="avatar-img" />
+                <img key={profile.avatar_url} src={profile.avatar_url} alt="Avatar" className="avatar-img" />
               ) : (
                 <div className="avatar-placeholder">{profile?.username?.[0]?.toUpperCase() || 'U'}</div>
               )}
@@ -165,17 +173,34 @@ export default function Profile() {
         </div>
 
         <div className="profile-body">
-          <h3>Profile Settings</h3>
+          <h3>Settings</h3>
           {message.text && (
-            <div className={`alert alert-${message.type}`}>
+            <div className={`alert alert-${message.type}`} style={{marginTop: '10px'}}>
               {message.text}
             </div>
           )}
-          <form onSubmit={handleUpdateProfile}>
-            <div className="input-group">
-              <label className="input-label">Email (Cannot be changed)</label>
-              <input type="email" className="input-field" value={user.email} disabled />
+
+          <div className="input-group" style={{marginTop: '20px'}}>
+            <label className="input-label">Theme Mode</label>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button 
+                className={`btn ${theme === 'dark' ? 'btn-primary' : 'btn-outline'}`}
+                onClick={() => setTheme('dark')}
+                style={{ flex: 1 }}
+              >
+                Dark
+              </button>
+              <button 
+                className={`btn ${theme === 'light' ? 'btn-primary' : 'btn-outline'}`}
+                onClick={() => setTheme('light')}
+                style={{ flex: 1 }}
+              >
+                Light
+              </button>
             </div>
+          </div>
+
+          <form onSubmit={handleUpdateProfile} style={{marginTop: '24px'}}>
             <div className="input-group">
               <label className="input-label">Username</label>
               <input
@@ -185,7 +210,22 @@ export default function Profile() {
                 onChange={e => setEditUsername(e.target.value)}
               />
             </div>
-            <button type="submit" className="btn btn-primary" disabled={loading}>
+            <div className="input-group">
+              <label className="input-label">Your X Handle (Optional)</label>
+              <input
+                type="text"
+                className="input-field"
+                placeholder="e.g. yourname"
+                value={editXHandle}
+                onChange={e => setEditXHandle(e.target.value)}
+              />
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>Linking your X profile builds trust with the community.</p>
+            </div>
+            <div className="input-group">
+              <label className="input-label">Email (Cannot be changed)</label>
+              <input type="email" className="input-field" value={user.email} disabled />
+            </div>
+            <button type="submit" className="btn btn-primary" style={{width: '100%'}} disabled={loading}>
               {loading ? 'Saving...' : 'Save Changes'}
             </button>
           </form>

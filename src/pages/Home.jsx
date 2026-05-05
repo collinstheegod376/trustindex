@@ -58,7 +58,7 @@ export default function Home() {
     const [verifiedRes, scamRes, reportsRes, allRes] = await Promise.all([
       supabase.from('tracked_accounts').select('*').eq('status', 'verified').order('trust_score', { ascending: false }).limit(5),
       supabase.from('tracked_accounts').select('*').eq('status', 'scam').order('trust_score', { ascending: true }).limit(5),
-      supabase.from('reports').select('*, tracked_accounts(x_handle), profiles(username), votes(vote_type)').eq('status', 'approved').order('created_at', { ascending: false }).limit(10),
+      supabase.from('reports').select('*, tracked_accounts(x_handle), profiles(username, x_handle), votes(vote_type)').eq('status', 'approved').order('created_at', { ascending: false }).limit(10),
       supabase.from('tracked_accounts').select('id, status')
     ])
 
@@ -108,9 +108,19 @@ export default function Home() {
     loadDashboard() // Refresh counts
   }
 
-  async function handleSearch(e) {
-    e.preventDefault()
-    if (!query.trim()) return
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (query.trim()) {
+        performSearch()
+      } else {
+        setResults([])
+      }
+    }, 300) // 300ms debounce
+
+    return () => clearTimeout(delayDebounceFn)
+  }, [query])
+
+  async function performSearch() {
     setSearching(true)
     const handle = query.replace('@', '').trim()
     const { data } = await supabase
@@ -119,6 +129,11 @@ export default function Home() {
       .ilike('x_handle', `%${handle}%`)
     setResults(data || [])
     setSearching(false)
+  }
+
+  async function handleSearch(e) {
+    e.preventDefault()
+    if (query.trim()) performSearch()
   }
 
   return (
@@ -137,9 +152,7 @@ export default function Home() {
             onChange={e => setQuery(e.target.value)}
             className="search-input"
           />
-          <button type="submit" className="btn btn-primary" disabled={searching}>
-            {searching ? 'Searching...' : 'Check Trust'}
-          </button>
+          {searching && <span className="spinner" style={{width: '16px', height: '16px', border: '2px solid var(--accent-blue)', borderTopColor: 'transparent', borderRadius: '50%'}}></span>}
         </form>
       </section>
 
@@ -270,7 +283,18 @@ export default function Home() {
             </div>
             <div className="report-content">
               <div className="report-meta">
-                <span className="report-reporter">@{r.profiles?.username || 'anonymous'}</span>
+                {r.profiles?.x_handle ? (
+                  <a 
+                    href={`https://x.com/${r.profiles.x_handle}`} 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="report-reporter external-link"
+                  >
+                    @{r.profiles.username || 'anonymous'}
+                  </a>
+                ) : (
+                  <span className="report-reporter">@{r.profiles?.username || 'anonymous'}</span>
+                )}
                 <span className="report-arrow">→</span>
                 <a 
                   href={`https://x.com/${r.tracked_accounts?.x_handle}`} 

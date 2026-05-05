@@ -9,6 +9,12 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark')
+
+  useEffect(() => {
+    document.body.className = theme === 'light' ? 'light-theme' : ''
+    localStorage.setItem('theme', theme)
+  }, [theme])
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -45,6 +51,7 @@ export function AuthProvider({ children }) {
           id: userId,
           username: meta.username || '',
           avatar_url: meta.avatar_url || '',
+          x_handle: meta.x_handle || '',
           role: 'user'
         })
         .select()
@@ -61,7 +68,7 @@ export function AuthProvider({ children }) {
       email,
       password,
       options: {
-        data: { username, avatar_url: '' }
+        data: { username, avatar_url: '', x_handle: '' }
       }
     })
     return { data, error }
@@ -81,7 +88,8 @@ export function AuthProvider({ children }) {
   async function updateProfile(updates) {
     const { data, error } = await supabase
       .from('profiles')
-      .upsert({ id: user.id, ...updates })
+      .update(updates)
+      .eq('id', user.id)
       .select()
       .single()
     if (!error) setProfile(data)
@@ -120,6 +128,8 @@ export function AuthProvider({ children }) {
   }
 
   const value = {
+    theme,
+    setTheme,
     user,
     profile,
     loading,
