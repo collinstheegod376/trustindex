@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
-import { Search, ShieldCheck, ShieldAlert, AlertTriangle, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react'
+import { Search, ShieldCheck, ShieldAlert, AlertTriangle, TrendingUp, TrendingDown, ArrowRight, Link as LinkIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import './Home.css'
 
@@ -153,7 +153,14 @@ export default function Home() {
                 <div className="result-header">
                   <div className="result-handle">
                     <StatusIcon status={account.status} />
-                    <span>@{account.x_handle}</span>
+                    <a 
+                      href={`https://x.com/${account.x_handle}`} 
+                      target="_blank" 
+                      rel="noreferrer"
+                      className="external-link"
+                    >
+                      @{account.x_handle}
+                    </a>
                   </div>
                   <span className={`badge badge-${account.status === 'verified' ? 'green' : account.status === 'scam' ? 'red' : 'yellow'}`}>
                     {account.status}
@@ -207,7 +214,14 @@ export default function Home() {
           {topVerified.map((a, i) => (
             <div key={a.id} className="board-row">
               <span className="board-rank">#{i + 1}</span>
-              <span className="board-handle">@{a.x_handle}</span>
+              <a 
+                href={`https://x.com/${a.x_handle}`} 
+                target="_blank" 
+                rel="noreferrer" 
+                className="board-handle external-link"
+              >
+                @{a.x_handle}
+              </a>
               <span className="badge badge-green">{a.trust_score}</span>
             </div>
           ))}
@@ -219,7 +233,14 @@ export default function Home() {
           {topScams.map((a, i) => (
             <div key={a.id} className="board-row">
               <span className="board-rank">#{i + 1}</span>
-              <span className="board-handle">@{a.x_handle}</span>
+              <a 
+                href={`https://x.com/${a.x_handle}`} 
+                target="_blank" 
+                rel="noreferrer" 
+                className="board-handle external-link"
+              >
+                @{a.x_handle}
+              </a>
               <span className="badge badge-red">{a.trust_score}</span>
             </div>
           ))}
@@ -251,14 +272,41 @@ export default function Home() {
               <div className="report-meta">
                 <span className="report-reporter">@{r.profiles?.username || 'anonymous'}</span>
                 <span className="report-arrow">→</span>
-                <span className="report-target">@{r.tracked_accounts?.x_handle || 'unknown'}</span>
+                <a 
+                  href={`https://x.com/${r.tracked_accounts?.x_handle}`} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="report-target external-link"
+                >
+                  @{r.tracked_accounts?.x_handle || 'unknown'}
+                </a>
               </div>
               <p className="report-reason">{r.reason}</p>
               {r.notes && <p className="report-notes">{r.notes}</p>}
+              
+              {r.proof_url && (
+                <div className="report-proof-preview">
+                  <img 
+                    src={r.proof_url} 
+                    alt="Proof" 
+                    className="proof-img" 
+                    onClick={() => window.open(r.proof_url, '_blank')}
+                    style={{ cursor: 'pointer', borderRadius: '8px', marginTop: '12px', maxWidth: '100%', maxHeight: '300px', objectFit: 'cover', border: '1px solid var(--panel-border)' }}
+                  />
+                </div>
+              )}
+
               <div className="report-footer">
-                <span className={`badge badge-${r.status === 'approved' ? 'green' : r.status === 'rejected' ? 'red' : 'yellow'}`}>
-                  {r.status}
-                </span>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <span className={`badge badge-${r.status === 'approved' ? 'green' : r.status === 'rejected' ? 'red' : 'yellow'}`}>
+                    {r.status}
+                  </span>
+                  {r.giveaway_url && (
+                    <a href={r.giveaway_url} target="_blank" rel="noreferrer" className="external-link" style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <LinkIcon size={14} /> View Original Post
+                    </a>
+                  )}
+                </div>
                 <span className="report-date">{new Date(r.created_at).toLocaleDateString()}</span>
               </div>
             </div>

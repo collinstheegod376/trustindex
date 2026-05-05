@@ -41,6 +41,18 @@ a:hover {
   opacity: 0.8;
 }
 
+.external-link {
+  color: inherit;
+  text-decoration: none;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.external-link:hover {
+  color: var(--accent-blue);
+  opacity: 1;
+}
+
 /* Glassmorphism Panel Utility */
 .glass-panel {
   background: var(--panel-bg);
