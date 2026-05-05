@@ -180,27 +180,27 @@ export default function Profile() {
             </div>
           )}
 
-          <div className="input-group" style={{marginTop: '20px'}}>
+          <div className="input-group">
             <label className="input-label">Theme Mode</label>
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div className="theme-toggle-group">
               <button 
+                type="button"
                 className={`btn ${theme === 'dark' ? 'btn-primary' : 'btn-outline'}`}
                 onClick={() => setTheme('dark')}
-                style={{ flex: 1 }}
               >
-                Dark
+                Dark Mode
               </button>
               <button 
+                type="button"
                 className={`btn ${theme === 'light' ? 'btn-primary' : 'btn-outline'}`}
                 onClick={() => setTheme('light')}
-                style={{ flex: 1 }}
               >
-                Light
+                Light Mode
               </button>
             </div>
           </div>
 
-          <form onSubmit={handleUpdateProfile} style={{marginTop: '24px'}}>
+          <form onSubmit={handleUpdateProfile} style={{marginTop: '32px'}}>
             <div className="input-group">
               <label className="input-label">Username</label>
               <input

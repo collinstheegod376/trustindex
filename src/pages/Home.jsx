@@ -290,7 +290,7 @@ export default function Home() {
                     rel="noreferrer" 
                     className="report-reporter external-link"
                   >
-                    @{r.profiles.username || 'anonymous'}
+                    @{r.profiles?.username || 'anonymous'}
                   </a>
                 ) : (
                   <span className="report-reporter">@{r.profiles?.username || 'anonymous'}</span>
