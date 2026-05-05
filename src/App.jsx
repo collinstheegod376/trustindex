@@ -54,35 +54,34 @@ function App() {
     );
   }
 
-  // If not logged in, force them to see the Profile component which acts as Login
-  if (!user) {
-    return (
-      <div style={{ minHeight: '100vh', background: 'var(--bg-color)', display: 'flex', flexDirection: 'column' }}>
-        <header className="nav-header" style={{ justifyContent: 'center' }}>
-          <div className="nav-brand">
-            <ShieldAlert color="#2979ff" size={28} />
-            <span>TrustIndex</span>
-          </div>
-        </header>
-        <main className="container" style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-          <Profile />
-        </main>
-      </div>
-    );
-  }
-
   return (
     <Router>
-      <Navigation />
-      <main className="container">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/report" element={<Report />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </main>
+      {!user ? (
+        <div style={{ minHeight: '100vh', background: 'var(--bg-color)', display: 'flex', flexDirection: 'column' }}>
+          <header className="nav-header" style={{ justifyContent: 'center' }}>
+            <div className="nav-brand">
+              <ShieldAlert color="#2979ff" size={28} />
+              <span>TrustIndex</span>
+            </div>
+          </header>
+          <main className="container" style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+            <Profile />
+          </main>
+        </div>
+      ) : (
+        <>
+          <Navigation />
+          <main className="container">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/report" element={<Report />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </main>
+        </>
+      )}
     </Router>
   );
 }
