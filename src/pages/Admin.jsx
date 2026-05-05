@@ -21,18 +21,31 @@ export default function Admin() {
   useEffect(() => {
     if (isAdmin) {
       fetchData()
+      
+      const sub = supabase
+        .channel('admin_chats')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_chats' }, () => {
+          fetchData()
+        })
+        .subscribe()
+
+      return () => supabase.removeChannel(sub)
     }
   }, [isAdmin])
 
   async function fetchData() {
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+    // Increase range to 25h to avoid any timezone/drift issues
+    const rangeAgo = new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString()
     
     const [repsRes, accsRes, subsRes, chatsRes] = await Promise.all([
       supabase.from('reports').select('*, tracked_accounts(x_handle, status), profiles(username)').eq('status', 'pending').order('created_at', { ascending: false }),
       supabase.from('tracked_accounts').select('*').order('trust_score', { ascending: true }),
       supabase.from('host_submissions').select('*').order('created_at', { ascending: false }),
-      supabase.from('support_chats').select('*').gt('created_at', twentyFourHoursAgo).order('created_at', { ascending: true })
+      supabase.from('support_chats').select('*').gt('created_at', rangeAgo).order('created_at', { ascending: true })
     ])
+
+    if (chatsRes.error) console.error('Chats Error:', chatsRes.error)
+    console.log('Fetched chats:', chatsRes.data?.length)
 
     setReports(repsRes.data || [])
     setAccounts(accsRes.data || [])
