@@ -64,10 +64,11 @@ export default function Home() {
 
     // Process reports to sum votes
     const processedReports = (reportsRes.data || []).map(r => {
-      const upvotes = r.votes.filter(v => v.vote_type === 1).length
-      const downvotes = r.votes.filter(v => v.vote_type === -1).length
-      return { ...r, voteCount: upvotes - downvotes }
-    })
+      const votes = r.votes || [];
+      const upvotes = votes.filter(v => v.vote_type === 1).length;
+      const downvotes = votes.filter(v => v.vote_type === -1).length;
+      return { ...r, upvotes, downvotes, score: upvotes - downvotes };
+    }).sort((a, b) => b.score - a.score)
 
     setTopVerified(verifiedRes.data || [])
     setTopScams(scamRes.data || [])
@@ -273,7 +274,7 @@ export default function Home() {
               >
                 <ArrowBigUp size={24} fill={userVotes[r.id] === 1 ? 'currentColor' : 'none'} />
               </button>
-              <span className="vote-count">{r.voteCount}</span>
+              <span className="vote-count">{r.score}</span>
               <button 
                 className={`vote-btn ${userVotes[r.id] === -1 ? 'active-down' : ''}`}
                 onClick={() => handleVote(r.id, -1)}
