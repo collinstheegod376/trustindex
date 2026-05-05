@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../supabase'
-import { ShieldCheck, ShieldAlert, AlertTriangle, ArrowLeft } from 'lucide-react'
+import { ShieldCheck, ShieldAlert, AlertTriangle, ArrowLeft, MessageSquare, Send } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 export default function Admin() {
@@ -9,6 +9,8 @@ export default function Admin() {
   const [reports, setReports] = useState([])
   const [accounts, setAccounts] = useState([])
   const [submissions, setSubmissions] = useState([])
+  const [supportChats, setSupportChats] = useState([])
+  const [adminReplies, setAdminReplies] = useState({}) // user_id -> message
   
   // Manual add state
   const [newHandle, setNewHandle] = useState('')
@@ -23,47 +25,64 @@ export default function Admin() {
   }, [isAdmin])
 
   async function fetchData() {
-    const { data: reps } = await supabase
-      .from('reports')
-      .select('*, tracked_accounts(x_handle, status), profiles(username)')
-      .eq('status', 'pending')
-      .order('created_at', { ascending: false })
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
     
-    const { data: accs } = await supabase
-      .from('tracked_accounts')
-      .select('*')
-      .order('trust_score', { ascending: true })
+    const [repsRes, accsRes, subsRes, chatsRes] = await Promise.all([
+      supabase.from('reports').select('*, tracked_accounts(x_handle, status), profiles(username)').eq('status', 'pending').order('created_at', { ascending: false }),
+      supabase.from('tracked_accounts').select('*').order('trust_score', { ascending: true }),
+      supabase.from('host_submissions').select('*').order('created_at', { ascending: false }),
+      supabase.from('support_chats').select('*').gt('created_at', twentyFourHoursAgo).order('created_at', { ascending: true })
+    ])
 
-    const { data: subs, error: subError } = await supabase
-      .from('host_submissions')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    if (subError) console.error('Submissions Error:', subError)
-
-    setReports(reps || [])
-    setAccounts(accs || [])
-    setSubmissions(subs || [])
+    setReports(repsRes.data || [])
+    setAccounts(accsRes.data || [])
+    setSubmissions(subsRes.data || [])
+    setSupportChats(chatsRes.data || [])
   }
 
-  async function handleHostSubmission(subId, handle, action) {
+  async function handleAdminReply(targetUserId) {
+    const reply = adminReplies[targetUserId]
+    if (!reply?.trim()) return
+
+    const { error } = await supabase.from('support_chats').insert([
+      { user_id: targetUserId, message: reply.trim(), is_admin: true }
+    ])
+
+    if (!error) {
+      setAdminReplies(prev => ({ ...prev, [targetUserId]: '' }))
+      fetchData()
+    }
+  }
+
+  async function handleHostSubmission(subId, handle, action, subType) {
     try {
       if (action === 'approve') {
+        const status = subType === 'report' ? 'scam' : 'verified'
+        const score = subType === 'report' ? 10 : 90
+        
         // Add to tracked accounts
         const { error: accError } = await supabase.from('tracked_accounts').insert([{
           x_handle: handle,
-          status: 'verified',
-          trust_score: 90
+          status: status,
+          trust_score: score
         }])
         if (accError) throw accError
       }
 
-      const { error: subError } = await supabase
-        .from('host_submissions')
-        .update({ status: action === 'approve' ? 'approved' : 'rejected' })
-        .eq('id', subId)
+      if (action === 'reject') {
+        const { error: delError } = await supabase
+          .from('host_submissions')
+          .delete()
+          .eq('id', subId)
+        if (delError) throw delError
+      } else {
+        const { error: subError } = await supabase
+          .from('host_submissions')
+          .update({ status: action === 'approve' ? 'approved' : 'rejected' })
+          .eq('id', subId)
+        if (subError) throw subError
+      }
       
-      if (subError) throw subError
       fetchData()
     } catch (error) {
       alert('Error: ' + error.message)
@@ -72,11 +91,14 @@ export default function Admin() {
 
   async function handleReportAction(reportId, accountId, action) {
     try {
-      // action: 'approve_scam', 'approve_legit', 'reject'
-      let newReportStatus = action === 'reject' ? 'rejected' : 'approved'
-      
-      const { error: repError } = await supabase.from('reports').update({ status: newReportStatus }).eq('id', reportId)
-      if (repError) throw repError
+      if (action === 'reject') {
+        const { error: delError } = await supabase.from('reports').delete().eq('id', reportId)
+        if (delError) throw delError
+        fetchData()
+        return
+      }
+
+      let newReportStatus = 'approved'
 
       if (action === 'approve_scam') {
         const { error: accError } = await supabase.from('tracked_accounts').update({ 
@@ -145,6 +167,41 @@ export default function Admin() {
         <ShieldCheck size={36} color="var(--accent-blue)" />
         <h1 style={{ margin: 0 }}>Admin Dashboard</h1>
       </div>
+
+      <section className="glass-panel" style={{ marginBottom: '40px' }}>
+        <h2 style={{ marginBottom: '20px' }}><MessageSquare size={20} /> Support Inbox (24h)</h2>
+        {Array.from(new Set(supportChats.map(c => c.user_id))).length === 0 && (
+          <p style={{ color: 'var(--text-muted)' }}>No recent chat activity.</p>
+        )}
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {Array.from(new Set(supportChats.map(c => c.user_id))).map(uid => (
+            <div key={uid} style={{ background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '12px', border: '1px solid var(--panel-border)' }}>
+              <div style={{ marginBottom: '16px', fontWeight: 'bold', color: 'var(--accent-blue)' }}>User: {uid.slice(0, 8)}...</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '200px', overflowY: 'auto', marginBottom: '16px', padding: '10px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px' }}>
+                {supportChats.filter(c => c.user_id === uid).map(c => (
+                  <div key={c.id} style={{ alignSelf: c.is_admin ? 'flex-end' : 'flex-start', color: c.is_admin ? 'var(--accent-green)' : 'white', fontSize: '0.9rem' }}>
+                    <strong>{c.is_admin ? 'Admin' : 'User'}:</strong> {c.message}
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <input 
+                  type="text" 
+                  className="input-field" 
+                  placeholder="Reply to user..." 
+                  value={adminReplies[uid] || ''}
+                  onChange={e => setAdminReplies({ ...adminReplies, [uid]: e.target.value })}
+                  style={{ margin: 0 }}
+                />
+                <button className="btn btn-primary" onClick={() => handleAdminReply(uid)}>
+                  <Send size={18} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
       
       <section className="glass-panel" style={{ marginBottom: '40px' }}>
         <h2 style={{ marginBottom: '20px' }}>Manually Add Account</h2>
@@ -209,25 +266,52 @@ export default function Admin() {
       </section>
 
       <section className="glass-panel" style={{ marginBottom: '40px' }}>
-        <h2 style={{ marginBottom: '20px' }}>Host Submissions ({submissions.length})</h2>
-        {submissions.length === 0 && <p style={{ color: 'var(--text-muted)' }}>No new host submissions.</p>}
+        <h2 style={{ marginBottom: '20px' }}>Promotion Requests ({submissions.filter(s => s.submission_type !== 'report').length})</h2>
+        {submissions.filter(s => s.submission_type !== 'report').length === 0 && <p style={{ color: 'var(--text-muted)' }}>No new promotions.</p>}
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {submissions.map(s => (
+          {submissions.filter(s => s.submission_type !== 'report' && s.status === 'pending').map(s => (
             <div key={s.id} style={{ background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '8px', border: '1px solid var(--panel-border)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                 <div>
-                  <strong>@{s.x_handle}</strong> submitted by <em>@{s.profiles?.username || 'unknown'}</em>
+                  <strong>@{s.x_handle}</strong> submitted by <em>User {s.user_id.slice(0, 5)}</em>
                 </div>
                 <span className="badge badge-yellow">{s.status}</span>
               </div>
               
               <div style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
-                <button className="btn" style={{ background: 'rgba(0, 230, 118, 0.1)', color: 'var(--accent-green)', border: '1px solid rgba(0, 230, 118, 0.3)' }} onClick={() => handleHostSubmission(s.id, s.x_handle, 'approve')}>
-                  Approve Host
+                <button className="btn" style={{ background: 'rgba(0, 230, 118, 0.1)', color: 'var(--accent-green)', border: '1px solid rgba(0, 230, 118, 0.3)' }} onClick={() => handleHostSubmission(s.id, s.x_handle, 'approve', s.submission_type)}>
+                  Approve Promotion
                 </button>
-                <button className="btn btn-outline" onClick={() => handleHostSubmission(s.id, s.x_handle, 'reject')}>
+                <button className="btn btn-outline" onClick={() => handleHostSubmission(s.id, s.x_handle, 'reject', s.submission_type)}>
                   Reject
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="glass-panel" style={{ marginBottom: '40px' }}>
+        <h2 style={{ marginBottom: '20px' }}>Host Scam Flags ({submissions.filter(s => s.submission_type === 'report').length})</h2>
+        {submissions.filter(s => s.submission_type === 'report').length === 0 && <p style={{ color: 'var(--text-muted)' }}>No new scam flags.</p>}
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {submissions.filter(s => s.submission_type === 'report' && s.status === 'pending').map(s => (
+            <div key={s.id} style={{ background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '8px', border: '1px solid var(--panel-border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div>
+                  <strong>@{s.x_handle}</strong> flagged by <em>User {s.user_id.slice(0, 5)}</em>
+                </div>
+                <span className="badge badge-red">FLAGGED</span>
+              </div>
+              
+              <div style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
+                <button className="btn btn-danger" onClick={() => handleHostSubmission(s.id, s.x_handle, 'approve', s.submission_type)}>
+                  Confirm as Scam
+                </button>
+                <button className="btn btn-outline" onClick={() => handleHostSubmission(s.id, s.x_handle, 'reject', s.submission_type)}>
+                  Reject Flag
                 </button>
               </div>
             </div>
@@ -251,7 +335,21 @@ export default function Admin() {
               {accounts.map(a => (
                 <tr key={a.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                   <td style={{ padding: '12px', fontWeight: 'bold' }}>@{a.x_handle}</td>
-                  <td style={{ padding: '12px' }}>{a.trust_score}</td>
+                  <td style={{ padding: '12px' }}>
+                    <input 
+                      type="number" 
+                      min="0" 
+                      max="100" 
+                      className="input-field" 
+                      style={{ padding: '4px 8px', width: '70px', margin: 0 }}
+                      value={a.trust_score} 
+                      onChange={async (e) => {
+                        const newScore = Number(e.target.value);
+                        await supabase.from('tracked_accounts').update({ trust_score: newScore }).eq('id', a.id);
+                        fetchData();
+                      }} 
+                    />
+                  </td>
                   <td style={{ padding: '12px' }}>
                     <span className={`badge badge-${a.status === 'verified' ? 'green' : a.status === 'scam' ? 'red' : 'yellow'}`}>
                       {a.status}
