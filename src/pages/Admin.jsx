@@ -45,6 +45,7 @@ export default function Admin() {
     ])
 
     if (chatsRes.error) console.error('Chats Error:', chatsRes.error)
+    if (subsRes.error) console.error('Submissions Error:', subsRes.error)
     console.log('Fetched chats:', chatsRes.data?.length)
 
     setReports(repsRes.data || [])
@@ -287,7 +288,9 @@ export default function Admin() {
             <div key={s.id} style={{ background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '8px', border: '1px solid var(--panel-border)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                 <div>
-                  <strong>@{s.x_handle}</strong> submitted by <em>User {s.user_id.slice(0, 5)}</em>
+                  <a href={`https://x.com/${s.x_handle}`} target="_blank" rel="noopener noreferrer" className="hover-glow" style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <strong>@{s.x_handle}</strong>
+                  </a> submitted by <em>{s.profiles?.username ? `@${s.profiles.username}` : `User ${s.user_id.slice(0, 5)}`}</em>
                 </div>
                 <span className="badge badge-yellow">{s.status}</span>
               </div>
@@ -314,7 +317,9 @@ export default function Admin() {
             <div key={s.id} style={{ background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '8px', border: '1px solid var(--panel-border)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                 <div>
-                  <strong>@{s.x_handle}</strong> flagged by <em>User {s.user_id.slice(0, 5)}</em>
+                  <a href={`https://x.com/${s.x_handle}`} target="_blank" rel="noopener noreferrer" className="hover-glow" style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <strong>@{s.x_handle}</strong>
+                  </a> flagged by <em>{s.profiles?.username ? `@${s.profiles.username}` : `User ${s.user_id.slice(0, 5)}`}</em>
                 </div>
                 <span className="badge badge-red">FLAGGED</span>
               </div>

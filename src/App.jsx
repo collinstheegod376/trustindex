@@ -80,7 +80,7 @@ function Navigation() {
             <ShieldCheck size={18} /> Admin
           </Link>
         )}
-        <Link to="/promote?type=promote" className="btn btn-outline">Add Your Host</Link>
+        <Link to="/promote?type=promote" className="btn btn-outline">Add a Host</Link>
         <Link to="/promote?type=report" className="btn btn-outline" style={{ color: 'var(--accent-red)', borderColor: 'rgba(255, 61, 0, 0.3)' }}>Report a Host</Link>
         <Link to="/report" className="btn btn-outline">Report Giveaway</Link>
         
