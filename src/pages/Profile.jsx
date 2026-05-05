@@ -37,7 +37,6 @@ export default function Profile() {
     } else {
       const res = await signUp(email, password, username)
       error = res.error
-      if (!error) setMessage({ type: 'success', text: 'Check your email for the confirmation link.' })
     }
 
     if (error) setMessage({ type: 'error', text: error.message })
