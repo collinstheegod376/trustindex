@@ -265,8 +265,8 @@ export default function Home() {
       <section className="recent-section">
         <h2>Recent Reports</h2>
         {recentReports.length === 0 && <p className="empty-msg">No reports filed yet. Be the first!</p>}
-        {recentReports.map(r => (
-          <div key={r.id} className="report-row glass-panel report-with-vote">
+        {recentReports.map((r, i) => (
+          <div key={r.id} className="report-row glass-panel report-with-vote" style={{ animation: 'fadeInUp 0.6s ease-out both', animationDelay: `${i * 0.1}s` }}>
             <div className="vote-column">
               <button 
                 className={`vote-btn ${userVotes[r.id] === 1 ? 'active-up' : ''}`}

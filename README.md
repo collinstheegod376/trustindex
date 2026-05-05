@@ -1,143 +1,64 @@
-# X Giveaway Tracker & Trust Index
+# 🛡️ TrustIndex (V1.0 MVP)
+**The Social Media Reputation Layer**
 
-A community-driven platform to report, verify, and track X (Twitter) giveaway accounts and specific giveaways.
+TrustIndex is a high-fidelity web platform designed to eliminate social media giveaway fraud through community-driven accountability and decentralized proof tracking.
 
-## Core Features
-- **Trust Index**: Search X handles to see if they are legit or scams.
-- **Reporting System**: Users can flag giveaways with proof (screenshots, links).
-- **Community Voting**: "Community Notes" style validation where users upvote/downvote reports.
-- **Admin Dashboard**: Admins can review reports and permanently mark accounts as scammers.
-- **Profiles**: Users can sign up, set an avatar, and build their reputation.
+---
 
-## Stack
-- Frontend: React + Vite + Vanilla CSS (Glassmorphism & Neon accents)
-- Backend/DB/Auth: Supabase (Free Tier)
-- Icons: Lucide React
-- Routing: React Router v6
+## **🔥 Live Demo**
+[Visit TrustIndex Live](https://trustindex-six.vercel.app/)
 
-## Supabase Schema & Setup
+---
 
-To make this app work, you need to create a free Supabase project.
+## **💎 Why TrustIndex?**
+Social media scams are at an all-time high. TrustIndex provides a secure, transparent way for users to:
+*   **Search & Verify:** Instantly check an X handle's reputation before engaging.
+*   **Report Fraud:** Upload immutable proof of scam activities or failed payouts.
+*   **Community Vetting:** Vote on reports to build a consensus-based trust score.
 
-### 1. Authentication
-Enable **Email Auth** in the Supabase dashboard (Authentication -> Providers).
+---
 
-### 2. Database Tables
+## **🚀 The Pitch: Scaling to V2**
+We are currently in **Version 1.0 (MVP)**. Our roadmap includes official **X API integration** to automate the verification process and build real-time fraud detection tools.
 
-Run the following SQL in your Supabase SQL Editor:
+👉 **[Read our full Pitch & Roadmap here](./PITCH.md)**
 
-```sql
--- 1. Profiles Table (Linked to auth.users)
-create table public.profiles (
-  id uuid references auth.users not null primary key,
-  username text unique,
-  avatar_url text,
-  role text default 'user' check (role in ('user', 'admin')),
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
+---
 
--- 2. Tracked Accounts Table (The X profiles being tracked)
-create table public.tracked_accounts (
-  id uuid default uuid_generate_v4() primary key,
-  x_handle text unique not null,
-  trust_score integer default 50,
-  status text default 'pending' check (status in ('verified', 'pending', 'scam')),
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
+## **🛠️ Tech Stack**
+*   **Frontend:** React (Vite) + Vanilla CSS (Premium Glassmorphism)
+*   **Backend:** Supabase (PostgreSQL, Auth, Storage)
+*   **Motion:** CSS Keyframe Animations & Micro-interactions
+*   **Icons:** Lucide React
 
--- 3. Reports Table (Reports filed against X profiles)
-create table public.reports (
-  id uuid default uuid_generate_v4() primary key,
-  tracked_account_id uuid references public.tracked_accounts(id) on delete cascade not null,
-  reporter_id uuid references public.profiles(id) on delete cascade not null,
-  giveaway_url text not null,
-  reason text not null,
-  proof_url text,
-  notes text,
-  status text default 'pending' check (status in ('approved', 'rejected', 'pending')),
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
+---
 
--- 4. Votes Table (Upvotes/Downvotes on reports)
-create table public.votes (
-  id uuid default uuid_generate_v4() primary key,
-  report_id uuid references public.reports(id) on delete cascade not null,
-  user_id uuid references public.profiles(id) on delete cascade not null,
-  vote_type integer not null check (vote_type in (1, -1)),
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  unique(report_id, user_id)
-);
-```
+## **💻 Local Development**
 
-### 3. Setting up Triggers (Optional but recommended for Profile auto-creation)
+1. **Clone & Install**
+   ```bash
+   git clone https://github.com/collinstheegod376/trustindex.git
+   cd trustindex
+   npm install
+   ```
 
-```sql
-create function public.handle_new_user()
-returns trigger as $$
-begin
-  insert into public.profiles (id, username, avatar_url)
-  values (new.id, new.raw_user_meta_data->>'username', new.raw_user_meta_data->>'avatar_url');
-  return new;
-end;
-$$ language plpgsql security definer;
+2. **Environment Variables**
+   Create a `.env.local` file:
+   ```env
+   VITE_SUPABASE_URL=your_supabase_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
 
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute procedure public.handle_new_user();
-```
+3. **Run Dev Server**
+   ```bash
+   npm run dev
+   ```
 
-### 4. Storage Bucket (For Profile Pictures)
+---
 
-Run this SQL to create the `avatars` bucket and give it the correct permissions so users can upload pictures:
+## **🛡️ Security**
+TrustIndex uses Supabase RLS (Row Level Security) to ensure that only authenticated users can submit reports and only admins can verify accounts.
 
-```sql
--- Create the storage bucket
-insert into storage.buckets (id, name, public) values ('avatars', 'avatars', true);
+---
 
--- Allow public read access to the avatars
-create policy "Public Access" on storage.objects for select using ( bucket_id = 'avatars' );
-
--- Allow authenticated users to upload files
-create policy "Auth Upload" on storage.objects for insert with check ( bucket_id = 'avatars' and auth.role() = 'authenticated' );
-
--- Allow authenticated users to update files
-create policy "Auth Update" on storage.objects for update with check ( bucket_id = 'avatars' and auth.role() = 'authenticated' );
-
--- 5. Storage Bucket (For Report Proofs)
-insert into storage.buckets (id, name, public) values ('proofs', 'proofs', true);
-create policy "Public Access Proofs" on storage.objects for select using ( bucket_id = 'proofs' );
-create policy "Auth Upload Proofs" on storage.objects for insert with check ( bucket_id = 'proofs' and auth.role() = 'authenticated' );
-
--- 6. RLS Policies (Run these to make the data visible!)
--- Profiles: Everyone can see profiles, only owners can update
-alter table public.profiles enable row level security;
-create policy "Public Profiles" on public.profiles for select using (true);
-create policy "Update Own Profile" on public.profiles for update using (auth.uid() = id);
-
--- Tracked Accounts: Everyone can see, only admins can modify
-alter table public.tracked_accounts enable row level security;
-create policy "Public Tracked Accounts" on public.tracked_accounts for select using (true);
-create policy "Admin Modify Tracked" on public.tracked_accounts for all using (
-  exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
-);
-
--- Reports: Everyone can see, authenticated can insert, admins can modify
-alter table public.reports enable row level security;
-create policy "Public Reports" on public.reports for select using (true);
-create policy "Auth Insert Reports" on public.reports for insert with check (auth.role() = 'authenticated');
-create policy "Admin Modify Reports" on public.reports for all using (
-  exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
-);
-
--- Votes: Everyone can see, authenticated can insert/update/delete own
-alter table public.votes enable row level security;
-create policy "Public Votes" on public.votes for select using (true);
-create policy "User Vote Actions" on public.votes for all using (auth.uid() = user_id);
-```
-
-## Getting Started
-
-1. Set up your Supabase project with the schema above.
-2. Rename `.env.example` to `.env.local` and add your Supabase URL and Anon Key.
-3. Run `npm install`
-4. Run `npm run dev`
+*Built with ❤️ to make the internet a safer place.*

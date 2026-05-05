@@ -6,7 +6,7 @@ import './Profile.css'
 
 export default function Profile() {
   const navigate = useNavigate()
-  const { user, profile, signIn, signUp, signOut, updateProfile, uploadAvatar, theme, setTheme } = useAuth()
+  const { user, profile, signIn, signUp, signOut, updateProfile, uploadAvatar } = useAuth()
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -180,25 +180,7 @@ export default function Profile() {
             </div>
           )}
 
-          <div className="input-group">
-            <label className="input-label">Theme Mode</label>
-            <div className="theme-toggle-group">
-              <button 
-                type="button"
-                className={`btn ${theme === 'dark' ? 'btn-primary' : 'btn-outline'}`}
-                onClick={() => setTheme('dark')}
-              >
-                Dark Mode
-              </button>
-              <button 
-                type="button"
-                className={`btn ${theme === 'light' ? 'btn-primary' : 'btn-outline'}`}
-                onClick={() => setTheme('light')}
-              >
-                Light Mode
-              </button>
-            </div>
-          </div>
+
 
           <form onSubmit={handleUpdateProfile} style={{marginTop: '32px'}}>
             <div className="input-group">

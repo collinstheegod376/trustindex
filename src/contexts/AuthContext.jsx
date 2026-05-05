@@ -9,12 +9,6 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark')
-
-  useEffect(() => {
-    document.body.className = theme === 'light' ? 'light-theme' : ''
-    localStorage.setItem('theme', theme)
-  }, [theme])
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -128,8 +122,6 @@ export function AuthProvider({ children }) {
   }
 
   const value = {
-    theme,
-    setTheme,
     user,
     profile,
     loading,
