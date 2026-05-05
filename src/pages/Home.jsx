@@ -58,7 +58,7 @@ export default function Home() {
     const [verifiedRes, scamRes, reportsRes, allRes] = await Promise.all([
       supabase.from('tracked_accounts').select('*').eq('status', 'verified').order('trust_score', { ascending: false }).limit(5),
       supabase.from('tracked_accounts').select('*').eq('status', 'scam').order('trust_score', { ascending: true }).limit(5),
-      supabase.from('reports').select('*, tracked_accounts(x_handle), profiles(username), votes(vote_type)').order('created_at', { ascending: false }).limit(10),
+      supabase.from('reports').select('*, tracked_accounts(x_handle), profiles(username), votes(vote_type)').eq('status', 'approved').order('created_at', { ascending: false }).limit(10),
       supabase.from('tracked_accounts').select('id, status')
     ])
 

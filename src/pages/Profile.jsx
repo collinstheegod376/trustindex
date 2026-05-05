@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { LogIn, UserPlus, Upload, ShieldCheck, LogOut } from 'lucide-react'
 import './Profile.css'
 
 export default function Profile() {
+  const navigate = useNavigate()
   const { user, profile, signIn, signUp, signOut, updateProfile, uploadAvatar } = useAuth()
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState('')
@@ -43,7 +45,10 @@ export default function Profile() {
     setLoading(true)
     const { error } = await updateProfile({ username: editUsername })
     if (error) setMessage({ type: 'error', text: error.message })
-    else setMessage({ type: 'success', text: 'Profile updated!' })
+    else {
+      setMessage({ type: 'success', text: 'Profile updated!' })
+      setTimeout(() => navigate('/'), 1000)
+    }
     setLoading(false)
   }
 

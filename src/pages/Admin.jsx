@@ -7,6 +7,12 @@ export default function Admin() {
   const { user, isAdmin } = useAuth()
   const [reports, setReports] = useState([])
   const [accounts, setAccounts] = useState([])
+  
+  // Manual add state
+  const [newHandle, setNewHandle] = useState('')
+  const [newStatus, setNewStatus] = useState('scam')
+  const [newScore, setNewScore] = useState(10)
+  const [isAdding, setIsAdding] = useState(false)
 
   useEffect(() => {
     if (isAdmin) {
@@ -51,6 +57,34 @@ export default function Admin() {
     fetchData() // refresh
   }
 
+  async function handleAddAccount(e) {
+    e.preventDefault()
+    if (!newHandle.trim()) return
+    setIsAdding(true)
+    const cleanHandle = newHandle.replace('@', '').trim()
+    
+    // Check if exists
+    const { data: existing } = await supabase.from('tracked_accounts').select('id').eq('x_handle', cleanHandle).single()
+    if (existing) {
+      alert('Account already tracked. Please use the table below to update it.')
+      setIsAdding(false)
+      return
+    }
+
+    const { error } = await supabase.from('tracked_accounts').insert([{
+      x_handle: cleanHandle,
+      status: newStatus,
+      trust_score: newScore
+    }])
+
+    if (error) alert(error.message)
+    else {
+      setNewHandle('')
+      fetchData()
+    }
+    setIsAdding(false)
+  }
+
   if (!isAdmin) {
     return (
       <div className="glass-panel text-center" style={{ margin: '40px auto', maxWidth: '500px', padding: '40px' }}>
@@ -65,6 +99,34 @@ export default function Admin() {
     <div style={{ padding: '20px 0' }}>
       <h1 style={{ marginBottom: '32px' }}><ShieldCheck size={32} style={{ verticalAlign: 'bottom' }}/> Admin Dashboard</h1>
       
+      <section className="glass-panel" style={{ marginBottom: '40px' }}>
+        <h2 style={{ marginBottom: '20px' }}>Manually Add Account</h2>
+        <form onSubmit={handleAddAccount} style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <div className="input-group" style={{ margin: 0, flex: 1, minWidth: '200px' }}>
+            <label className="input-label">X Handle</label>
+            <input type="text" className="input-field" placeholder="e.g. elonmusk" value={newHandle} onChange={e=>setNewHandle(e.target.value)} required />
+          </div>
+          <div className="input-group" style={{ margin: 0, width: '150px' }}>
+            <label className="input-label">Status</label>
+            <select className="input-field" value={newStatus} onChange={e => {
+              setNewStatus(e.target.value)
+              setNewScore(e.target.value === 'scam' ? 10 : e.target.value === 'verified' ? 90 : 50)
+            }}>
+              <option value="scam">Scam (Red)</option>
+              <option value="verified">Verified (Green)</option>
+              <option value="pending">Pending (Yellow)</option>
+            </select>
+          </div>
+          <div className="input-group" style={{ margin: 0, width: '100px' }}>
+            <label className="input-label">Score (0-100)</label>
+            <input type="number" min="0" max="100" className="input-field" value={newScore} onChange={e=>setNewScore(Number(e.target.value))} required />
+          </div>
+          <button type="submit" className="btn btn-primary" disabled={isAdding} style={{ height: '45px' }}>
+            {isAdding ? 'Adding...' : 'Add Account'}
+          </button>
+        </form>
+      </section>
+
       <section className="glass-panel" style={{ marginBottom: '40px' }}>
         <h2 style={{ marginBottom: '20px' }}>Pending Reports ({reports.length})</h2>
         {reports.length === 0 && <p style={{ color: 'var(--text-muted)' }}>No pending reports.</p>}

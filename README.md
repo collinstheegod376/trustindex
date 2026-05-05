@@ -102,6 +102,12 @@ create policy "Auth Upload" on storage.objects for insert with check ( bucket_id
 
 -- Allow authenticated users to update files
 create policy "Auth Update" on storage.objects for update with check ( bucket_id = 'avatars' and auth.role() = 'authenticated' );
+
+-- 5. Storage Bucket (For Report Proofs)
+insert into storage.buckets (id, name, public) values ('proofs', 'proofs', true);
+create policy "Public Access Proofs" on storage.objects for select using ( bucket_id = 'proofs' );
+create policy "Auth Upload Proofs" on storage.objects for insert with check ( bucket_id = 'proofs' and auth.role() = 'authenticated' );
+
 ```
 
 ## Getting Started

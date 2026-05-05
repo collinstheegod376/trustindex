@@ -104,6 +104,21 @@ export function AuthProvider({ children }) {
     return { url: publicUrl }
   }
 
+  async function uploadProof(file) {
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${user.id}-${Date.now()}.${fileExt}`
+    const { error: uploadError } = await supabase.storage
+      .from('proofs')
+      .upload(fileName, file, { upsert: true })
+    if (uploadError) return { error: uploadError }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('proofs')
+      .getPublicUrl(fileName)
+
+    return { url: publicUrl }
+  }
+
   const value = {
     user,
     profile,
@@ -113,6 +128,7 @@ export function AuthProvider({ children }) {
     signOut,
     updateProfile,
     uploadAvatar,
+    uploadProof,
     fetchProfile,
     isAdmin: profile?.role === 'admin'
   }
