@@ -63,7 +63,7 @@ export default function Home() {
     const [verifiedRes, scamRes, reportsRes, allRes] = await Promise.all([
       supabase.from('tracked_accounts').select('*').eq('status', 'verified').order('trust_score', { ascending: false }).limit(5),
       supabase.from('tracked_accounts').select('*').eq('status', 'scam').order('trust_score', { ascending: true }).limit(5),
-      supabase.from('reports').select('*, tracked_accounts(x_handle), profiles(username, x_handle), votes(vote_type)').eq('status', 'approved').gt('created_at', seventyTwoHoursAgo).order('created_at', { ascending: false }).limit(10),
+      supabase.from('reports').select('*, tracked_accounts(x_handle), profiles(username, x_handle, avatar_url), votes(vote_type)').eq('status', 'approved').gt('created_at', seventyTwoHoursAgo).order('created_at', { ascending: false }).limit(10),
       supabase.from('tracked_accounts').select('id, status')
     ])
 
@@ -274,79 +274,102 @@ export default function Home() {
       </section>
 
       {/* Recent Reports */}
-      <section className="recent-section">
-        <h2>Recent Reports</h2>
+      <section className="recent-section" style={{ maxWidth: '600px', margin: '0 auto', width: '100%' }}>
+        <h2 style={{ marginBottom: '20px' }}>Recent Reports</h2>
         {recentReports.length === 0 && <p className="empty-msg">No reports filed yet. Be the first!</p>}
-        {recentReports.map((r, i) => (
-          <div key={r.id} className="report-row glass-panel report-with-vote" style={{ animation: 'fadeInUp 0.6s ease-out both', animationDelay: `${i * 0.1}s` }}>
-            <div className="vote-column">
-              <button 
-                className={`vote-btn upvote ${userVotes[r.id] === 1 ? 'active' : ''}`}
-                onClick={() => handleVote(r.id, 1)}
-              >
-                <ThumbsUp size={20} fill={userVotes[r.id] === 1 ? 'currentColor' : 'none'} />
-              </button>
-              <span className="vote-count">{r.score}</span>
-              <button 
-                className={`vote-btn downvote ${userVotes[r.id] === -1 ? 'active' : ''}`}
-                onClick={() => handleVote(r.id, -1)}
-              >
-                <ThumbsDown size={20} fill={userVotes[r.id] === -1 ? 'currentColor' : 'none'} />
-              </button>
-            </div>
-            <div className="report-content">
-              <div className="report-meta">
-                <a 
-                  href={`https://x.com/${r.profiles?.x_handle || r.profiles?.username}`} 
-                  target="_blank" 
-                  rel="noreferrer" 
-                  className="report-reporter hover-glow"
-                  style={{ color: 'var(--accent-blue)', textDecoration: 'none' }}
-                >
-                  @{r.profiles?.username || 'anonymous'}
-                </a>
-                <span className="report-arrow">→</span>
-                <a 
-                  href={`https://x.com/${r.tracked_accounts?.x_handle}`} 
-                  target="_blank" 
-                  rel="noreferrer" 
-                  className="report-target hover-glow"
-                  style={{ color: 'inherit', textDecoration: 'none', fontWeight: 'bold' }}
-                >
-                  @{r.tracked_accounts?.x_handle || 'unknown'}
-                </a>
-              </div>
-              <p className="report-reason">{r.reason}</p>
-              {r.notes && <p className="report-notes">{r.notes}</p>}
-              
-              {r.proof_url && (
-                <div className="report-proof-preview">
-                  <img 
-                    src={r.proof_url} 
-                    alt="Proof" 
-                    className="proof-img" 
-                    onClick={() => window.open(r.proof_url, '_blank')}
-                    style={{ cursor: 'pointer', borderRadius: '8px', marginTop: '12px', maxWidth: '100%', maxHeight: '300px', objectFit: 'cover', border: '1px solid var(--panel-border)' }}
-                  />
-                </div>
-              )}
-
-              <div className="report-footer">
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <span className={`badge badge-${r.status === 'approved' ? 'green' : r.status === 'rejected' ? 'red' : 'yellow'}`}>
-                    {r.status}
-                  </span>
-                  {r.giveaway_url && (
-                    <a href={r.giveaway_url} target="_blank" rel="noreferrer" className="external-link" style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <LinkIcon size={14} /> View Original Post
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {recentReports.map((r, i) => (
+            <div key={r.id} className="report-row glass-panel" style={{ animation: 'fadeInUp 0.6s ease-out both', animationDelay: `${i * 0.05}s`, padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Header: User Info */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <img 
+                  src={r.profiles?.avatar_url || `https://ui-avatars.com/api/?name=${r.profiles?.username || 'User'}&background=2979ff&color=fff`} 
+                  alt="avatar" 
+                  style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }}
+                />
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                    <span style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--text-main)' }}>{r.profiles?.username || 'Anonymous'}</span>
+                    <a href={`https://x.com/${r.profiles?.x_handle || r.profiles?.username}`} target="_blank" rel="noreferrer" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>
+                      @{r.profiles?.x_handle || r.profiles?.username || 'anon'}
                     </a>
-                  )}
+                    <span style={{ color: 'var(--text-muted)' }}>·</span>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{new Date(r.created_at).toLocaleDateString()}</span>
+                  </div>
+                  <div style={{ fontSize: '0.9rem', color: 'var(--accent-red)', fontWeight: 600, marginTop: '2px' }}>
+                    Flagging <a href={`https://x.com/${r.tracked_accounts?.x_handle}`} target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>@{r.tracked_accounts?.x_handle}</a>
+                  </div>
                 </div>
-                <span className="report-date">{new Date(r.created_at).toLocaleDateString()}</span>
+              </div>
+
+              {/* Body: Content */}
+              <div style={{ paddingLeft: '60px' }}>
+                <p style={{ marginBottom: '16px', color: '#e2e8f0', fontSize: '1.1rem', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
+                  {r.reason}
+                </p>
+                {r.notes && (
+                  <p style={{ marginBottom: '16px', color: 'var(--text-muted)', fontSize: '0.95rem', fontStyle: 'italic' }}>
+                    {r.notes}
+                  </p>
+                )}
+                
+                {/* Attached Image */}
+                {r.proof_url && (
+                  <div style={{ marginBottom: '16px', borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--panel-border)' }}>
+                    <img 
+                      src={r.proof_url} 
+                      alt="Proof" 
+                      style={{ width: '100%', display: 'block', cursor: 'pointer' }}
+                      onClick={() => window.open(r.proof_url, '_blank')}
+                    />
+                  </div>
+                )}
+
+                {/* Action Bar */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.05)', flexWrap: 'wrap', gap: '16px' }}>
+                  <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+                    {/* Upvote */}
+                    <button 
+                      onClick={() => handleVote(r.id, 1)}
+                      style={{ background: 'none', border: 'none', color: userVotes[r.id] === 1 ? '#00e676' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', transition: '0.2s', padding: 0 }}
+                      className="hover-glow"
+                    >
+                      <ThumbsUp size={18} fill={userVotes[r.id] === 1 ? 'currentColor' : 'none'} />
+                      <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{r.score > 0 ? r.score : 'Like'}</span>
+                    </button>
+
+                    {/* Downvote */}
+                    <button 
+                      onClick={() => handleVote(r.id, -1)}
+                      style={{ background: 'none', border: 'none', color: userVotes[r.id] === -1 ? '#ff3d00' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', transition: '0.2s', padding: 0 }}
+                      className="hover-glow"
+                    >
+                      <ThumbsDown size={18} fill={userVotes[r.id] === -1 ? 'currentColor' : 'none'} />
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <span className={`badge badge-${r.status === 'approved' ? 'green' : 'yellow'}`}>
+                      {r.status}
+                    </span>
+                    {r.giveaway_url && (
+                      <a 
+                        href={r.giveaway_url} 
+                        target="_blank" 
+                        rel="noreferrer" 
+                        className="btn btn-outline" 
+                        style={{ padding: '6px 16px', fontSize: '0.85rem', borderRadius: '20px' }}
+                      >
+                        <LinkIcon size={14} style={{ marginRight: '4px' }} /> View Original Post
+                      </a>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
         <Link to="/recent-reports" className="btn btn-primary" style={{ width: '100%', marginTop: '32px', height: '56px', fontSize: '1.1rem' }}>
           View All Recent Reports <ArrowRight size={20} />
         </Link>

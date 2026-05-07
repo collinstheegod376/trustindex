@@ -57,7 +57,12 @@ function Navigation() {
   }, [user, location.pathname]);
 
   useEffect(() => {
-    if (location.pathname === '/support') setHasNewMsg(false);
+    if (location.pathname === '/support') {
+      setHasNewMsg(false);
+      // Ensure it stays cleared during initial page load/transitions
+      const timer = setTimeout(() => setHasNewMsg(false), 500);
+      return () => clearTimeout(timer);
+    }
   }, [location.pathname]);
 
   return (

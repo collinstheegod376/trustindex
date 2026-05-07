@@ -189,12 +189,14 @@
 }
 
 .report-row {
-  margin-bottom: 12px;
-  transition: transform 0.2s;
+  margin-bottom: 16px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .report-row:hover {
-  transform: translateY(-2px);
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  border-color: rgba(41, 121, 255, 0.4) !important;
 }
 
 .report-meta {
