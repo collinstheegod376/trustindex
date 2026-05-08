@@ -132,16 +132,25 @@ export default function Home() {
             {results.map(account => (
               <div key={account.id} className="result-card glass-panel">
                 <div className="result-header">
-                  <div className="result-handle">
-                    <StatusIcon status={account.status} />
-                    <a 
-                      href={`https://x.com/${account.x_handle}`} 
-                      target="_blank" 
-                      rel="noreferrer"
-                      className="external-link"
-                    >
-                      @{account.x_handle}
-                    </a>
+                  <div className="result-handle" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <img 
+                      src={`https://unavatar.io/x/${account.x_handle}`} 
+                      alt={account.x_handle}
+                      style={{ width: '32px', height: '32px', borderRadius: '50%', border: `2px solid ${account.status === 'verified' ? 'var(--accent-green)' : account.status === 'scam' ? 'var(--accent-red)' : '#ffd600'}`, objectFit: 'cover' }}
+                      onError={(e) => { e.target.onerror = null; e.target.src = `https://ui-avatars.com/api/?name=${account.x_handle}&background=1E293B&color=fff`; }}
+                    />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <StatusIcon status={account.status} />
+                      <a 
+                        href={`https://x.com/${account.x_handle}`} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="external-link"
+                        style={{ fontSize: '1.2rem', fontWeight: 'bold' }}
+                      >
+                        @{account.x_handle}
+                      </a>
+                    </div>
                   </div>
                   <span className={`badge badge-${account.status === 'verified' ? 'green' : account.status === 'scam' ? 'red' : 'yellow'}`}>
                     {account.status}
@@ -195,14 +204,22 @@ export default function Home() {
           {topVerified.map((a, i) => (
             <div key={a.id} className="board-row">
               <span className="board-rank">#{i + 1}</span>
-              <a 
-                href={`https://x.com/${a.x_handle}`} 
-                target="_blank" 
-                rel="noreferrer" 
-                className="board-handle external-link"
-              >
-                @{a.x_handle}
-              </a>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                <img 
+                  src={`https://unavatar.io/x/${a.x_handle}`} 
+                  alt={a.x_handle}
+                  style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1px solid var(--accent-green)', objectFit: 'cover' }}
+                  onError={(e) => { e.target.onerror = null; e.target.src = `https://ui-avatars.com/api/?name=${a.x_handle}&background=1E293B&color=fff`; }}
+                />
+                <a 
+                  href={`https://x.com/${a.x_handle}`} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="board-handle external-link"
+                >
+                  @{a.x_handle}
+                </a>
+              </div>
               <span className="badge badge-green">{a.trust_score}</span>
             </div>
           ))}
@@ -217,14 +234,22 @@ export default function Home() {
           {topScams.map((a, i) => (
             <div key={a.id} className="board-row">
               <span className="board-rank">#{i + 1}</span>
-              <a 
-                href={`https://x.com/${a.x_handle}`} 
-                target="_blank" 
-                rel="noreferrer" 
-                className="board-handle external-link"
-              >
-                @{a.x_handle}
-              </a>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                <img 
+                  src={`https://unavatar.io/x/${a.x_handle}`} 
+                  alt={a.x_handle}
+                  style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1px solid var(--accent-red)', objectFit: 'cover' }}
+                  onError={(e) => { e.target.onerror = null; e.target.src = `https://ui-avatars.com/api/?name=${a.x_handle}&background=1E293B&color=fff`; }}
+                />
+                <a 
+                  href={`https://x.com/${a.x_handle}`} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="board-handle external-link"
+                >
+                  @{a.x_handle}
+                </a>
+              </div>
               <span className="badge badge-red">{a.trust_score}</span>
             </div>
           ))}

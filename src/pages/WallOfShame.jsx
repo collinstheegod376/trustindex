@@ -43,15 +43,23 @@ export default function WallOfShame() {
               <div key={acc.id} className="report-row glass-panel" style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                   <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-muted)', width: '30px' }}>#{i + 1}</span>
-                  <a 
-                    href={`https://x.com/${acc.x_handle}`} 
-                    target="_blank" 
-                    rel="noreferrer" 
-                    style={{ fontSize: '1.2rem', fontWeight: 700, color: 'inherit', textDecoration: 'none' }}
-                    className="hover-glow"
-                  >
-                    @{acc.x_handle}
-                  </a>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <img 
+                      src={`https://unavatar.io/x/${acc.x_handle}`} 
+                      alt={acc.x_handle}
+                      style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid var(--accent-red)', objectFit: 'cover' }}
+                      onError={(e) => { e.target.onerror = null; e.target.src = `https://ui-avatars.com/api/?name=${acc.x_handle}&background=1E293B&color=fff`; }}
+                    />
+                    <a 
+                      href={`https://x.com/${acc.x_handle}`} 
+                      target="_blank" 
+                      rel="noreferrer" 
+                      style={{ fontSize: '1.2rem', fontWeight: 700, color: 'inherit', textDecoration: 'none' }}
+                      className="hover-glow"
+                    >
+                      @{acc.x_handle}
+                    </a>
+                  </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <span className="badge badge-red" style={{ fontSize: '1rem' }}>{acc.trust_score}</span>

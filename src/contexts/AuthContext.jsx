@@ -36,16 +36,15 @@ export function AuthProvider({ children }) {
       .eq('id', userId)
       .single()
 
-    // Profile row doesn't exist yet — create it from auth metadata
     if (error && error.code === 'PGRST116') {
       const meta = authUser?.user_metadata || {}
       const { data: newProfile } = await supabase
         .from('profiles')
         .upsert({
           id: userId,
-          username: meta.username || '',
-          avatar_url: meta.avatar_url || '',
-          x_handle: meta.x_handle || '',
+          username: meta.full_name || meta.name || meta.username || '',
+          avatar_url: meta.avatar_url || meta.picture || '',
+          x_handle: meta.preferred_username || meta.user_name || meta.x_handle || '',
           role: 'user'
         })
         .select()
@@ -70,6 +69,20 @@ export function AuthProvider({ children }) {
 
   async function signIn(email, password) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    return { data, error }
+  }
+
+  async function signInWithTwitter() {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'twitter',
+    })
+    return { data, error }
+  }
+
+  async function signInWithGoogle() {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+    })
     return { data, error }
   }
 
@@ -127,6 +140,8 @@ export function AuthProvider({ children }) {
     loading,
     signUp,
     signIn,
+    signInWithTwitter,
+    signInWithGoogle,
     signOut,
     updateProfile,
     uploadAvatar,
