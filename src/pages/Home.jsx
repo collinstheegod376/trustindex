@@ -49,42 +49,21 @@ export default function Home() {
   const [searching, setSearching] = useState(false)
   const [topVerified, setTopVerified] = useState([])
   const [topScams, setTopScams] = useState([])
-  const [recentReports, setRecentReports] = useState([])
   const [stats, setStats] = useState({ total: 0, scams: 0, verified: 0 })
-  const [userVotes, setUserVotes] = useState({}) // { reportId: voteType }
 
   useEffect(() => {
     loadDashboard()
   }, [user])
 
   async function loadDashboard() {
-    const seventyTwoHoursAgo = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString();
-
-    const [verifiedRes, scamRes, reportsRes, allRes] = await Promise.all([
+    const [verifiedRes, scamRes, allRes] = await Promise.all([
       supabase.from('tracked_accounts').select('*').eq('status', 'verified').order('trust_score', { ascending: false }).limit(5),
       supabase.from('tracked_accounts').select('*').eq('status', 'scam').order('trust_score', { ascending: true }).limit(5),
-      supabase.from('reports').select('*, tracked_accounts(x_handle), profiles(username, x_handle, avatar_url), votes(vote_type)').eq('status', 'approved').gt('created_at', seventyTwoHoursAgo).order('created_at', { ascending: false }).limit(10),
       supabase.from('tracked_accounts').select('id, status')
     ])
 
-    // Process reports to sum votes
-    const processedReports = (reportsRes.data || []).map(r => {
-      const votes = r.votes || [];
-      const upvotes = votes.filter(v => v.vote_type === 1).length;
-      const downvotes = votes.filter(v => v.vote_type === -1).length;
-      return { ...r, upvotes, downvotes, score: upvotes - downvotes };
-    }).sort((a, b) => b.score - a.score).slice(0, 5)
-
     setTopVerified(verifiedRes.data || [])
     setTopScams(scamRes.data || [])
-    setRecentReports(processedReports)
-
-    if (user) {
-      const { data: vData } = await supabase.from('votes').select('report_id, vote_type').eq('user_id', user.id)
-      const vMap = {}
-      vData?.forEach(v => vMap[v.report_id] = v.vote_type)
-      setUserVotes(vMap)
-    }
 
     const all = allRes.data || []
     setStats({
@@ -94,25 +73,7 @@ export default function Home() {
     })
   }
 
-  async function handleVote(reportId, voteType) {
-    if (!user) return alert('Please sign in to vote')
 
-    const currentVote = userVotes[reportId]
-    if (currentVote === voteType) {
-      // Remove vote
-      await supabase.from('votes').delete().eq('report_id', reportId).eq('user_id', user.id)
-      setUserVotes(prev => {
-        const next = { ...prev }
-        delete next[reportId]
-        return next
-      })
-    } else {
-      // Upsert vote
-      await supabase.from('votes').upsert({ report_id: reportId, user_id: user.id, vote_type: voteType })
-      setUserVotes(prev => ({ ...prev, [reportId]: voteType }))
-    }
-    loadDashboard() // Refresh counts
-  }
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
@@ -273,107 +234,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Recent Reports */}
-      <section className="recent-section" style={{ maxWidth: '600px', margin: '0 auto', width: '100%' }}>
-        <h2 style={{ marginBottom: '20px' }}>Recent Reports</h2>
-        {recentReports.length === 0 && <p className="empty-msg">No reports filed yet. Be the first!</p>}
-        
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {recentReports.map((r, i) => (
-            <div key={r.id} className="report-row glass-panel" style={{ animation: 'fadeInUp 0.6s ease-out both', animationDelay: `${i * 0.05}s`, padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* Header: User Info */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <img 
-                  src={r.profiles?.avatar_url || `https://ui-avatars.com/api/?name=${r.profiles?.username || 'User'}&background=2979ff&color=fff`} 
-                  alt="avatar" 
-                  style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }}
-                />
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                    <span style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--text-main)' }}>{r.profiles?.username || 'Anonymous'}</span>
-                    <a href={`https://x.com/${r.profiles?.x_handle || r.profiles?.username}`} target="_blank" rel="noreferrer" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>
-                      @{r.profiles?.x_handle || r.profiles?.username || 'anon'}
-                    </a>
-                    <span style={{ color: 'var(--text-muted)' }}>·</span>
-                    <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{new Date(r.created_at).toLocaleDateString()}</span>
-                  </div>
-                  <div style={{ fontSize: '0.9rem', color: 'var(--accent-red)', fontWeight: 600, marginTop: '2px' }}>
-                    Flagging <a href={`https://x.com/${r.tracked_accounts?.x_handle}`} target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>@{r.tracked_accounts?.x_handle}</a>
-                  </div>
-                </div>
-              </div>
 
-              {/* Body: Content */}
-              <div style={{ paddingLeft: '60px' }}>
-                <p style={{ marginBottom: '16px', color: '#e2e8f0', fontSize: '1.1rem', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
-                  {r.reason}
-                </p>
-                {r.notes && (
-                  <p style={{ marginBottom: '16px', color: 'var(--text-muted)', fontSize: '0.95rem', fontStyle: 'italic' }}>
-                    {r.notes}
-                  </p>
-                )}
-                
-                {/* Attached Image */}
-                {r.proof_url && (
-                  <div style={{ marginBottom: '16px', borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--panel-border)' }}>
-                    <img 
-                      src={r.proof_url} 
-                      alt="Proof" 
-                      style={{ width: '100%', display: 'block', cursor: 'pointer' }}
-                      onClick={() => window.open(r.proof_url, '_blank')}
-                    />
-                  </div>
-                )}
-
-                {/* Action Bar */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.05)', flexWrap: 'wrap', gap: '16px' }}>
-                  <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-                    {/* Upvote */}
-                    <button 
-                      onClick={() => handleVote(r.id, 1)}
-                      style={{ background: 'none', border: 'none', color: userVotes[r.id] === 1 ? '#00e676' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', transition: '0.2s', padding: 0 }}
-                      className="hover-glow"
-                    >
-                      <ThumbsUp size={18} fill={userVotes[r.id] === 1 ? 'currentColor' : 'none'} />
-                      <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{r.score > 0 ? r.score : 'Like'}</span>
-                    </button>
-
-                    {/* Downvote */}
-                    <button 
-                      onClick={() => handleVote(r.id, -1)}
-                      style={{ background: 'none', border: 'none', color: userVotes[r.id] === -1 ? '#ff3d00' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', transition: '0.2s', padding: 0 }}
-                      className="hover-glow"
-                    >
-                      <ThumbsDown size={18} fill={userVotes[r.id] === -1 ? 'currentColor' : 'none'} />
-                    </button>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <span className={`badge badge-${r.status === 'approved' ? 'green' : 'yellow'}`}>
-                      {r.status}
-                    </span>
-                    {r.giveaway_url && (
-                      <a 
-                        href={r.giveaway_url} 
-                        target="_blank" 
-                        rel="noreferrer" 
-                        className="btn btn-outline" 
-                        style={{ padding: '6px 16px', fontSize: '0.85rem', borderRadius: '20px' }}
-                      >
-                        <LinkIcon size={14} style={{ marginRight: '4px' }} /> View Original Post
-                      </a>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-        <Link to="/recent-reports" className="btn btn-primary" style={{ width: '100%', marginTop: '32px', height: '56px', fontSize: '1.1rem' }}>
-          View All Recent Reports <ArrowRight size={20} />
-        </Link>
-      </section>
     </div>
   )
 }

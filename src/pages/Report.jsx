@@ -8,7 +8,7 @@ export default function Report() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { user, uploadProof } = useAuth()
-  
+
   const [handle, setHandle] = useState(searchParams.get('handle') || '')
   const [url, setUrl] = useState('')
   const [reason, setReason] = useState('No winner announced')
@@ -16,7 +16,7 @@ export default function Report() {
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
-  
+
   const [proofFile, setProofFile] = useState(null)
   const [previewUrl, setPreviewUrl] = useState(null)
 
@@ -102,123 +102,123 @@ export default function Report() {
           Help the community by flagging fake giveaways. Please provide as much proof as possible.
         </p>
 
-      {message.text && (
-        <div className={`alert alert-${message.type}`} style={{ padding: '12px', borderRadius: '8px', marginBottom: '20px' }}>
-          {message.text}
-        </div>
-      )}
+        {message.text && (
+          <div className={`alert alert-${message.type}`} style={{ padding: '12px', borderRadius: '8px', marginBottom: '20px' }}>
+            {message.text}
+          </div>
+        )}
 
-      <form onSubmit={handleSubmit}>
-        <div className="input-group">
-          <label className="input-label">X (Twitter) Handle</label>
-          <input
-            type="text"
-            className="input-field"
-            placeholder="e.g. realfish"
-            value={handle}
-            onChange={e => setHandle(e.target.value)}
-            required
-          />
-        </div>
-
-        <div className="input-group">
-          <label className="input-label">Giveaway Post URL</label>
-          <div style={{ position: 'relative' }}>
-            <LinkIcon size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '14px' }} />
+        <form onSubmit={handleSubmit}>
+          <div className="input-group">
+            <label className="input-label">X (Twitter) Handle</label>
             <input
-              type="url"
+              type="text"
               className="input-field"
-              placeholder="https://x.com/..."
-              value={url}
-              onChange={e => setUrl(e.target.value)}
-              style={{ paddingLeft: '40px' }}
+              placeholder="e.g. larp"
+              value={handle}
+              onChange={e => setHandle(e.target.value)}
               required
             />
           </div>
-        </div>
 
-        <div className="input-group">
-          <label className="input-label">Reason for Report</label>
-          <select className="input-field" value={reason} onChange={e => setReason(e.target.value)}>
-            <option>No winner announced</option>
-            <option>Winner is a bot/burner account</option>
-            <option>Requires malicious/phishing link</option>
-            <option>Engagement farming (constant fake giveaways)</option>
-            <option>Verified Legit (I won and received the prize!)</option>
-          </select>
-        </div>
-
-        <div className="input-group">
-          <label className="input-label">Proof (Attach Screenshot or Image)</label>
-          <div className="file-upload-area" style={{ 
-            border: '2px dashed var(--panel-border)', 
-            borderRadius: '12px', 
-            padding: '20px', 
-            textAlign: 'center',
-            position: 'relative',
-            cursor: 'pointer',
-            backgroundColor: 'rgba(255,255,255,0.02)'
-          }}>
-            {!previewUrl ? (
-              <>
-                <Upload size={32} color="var(--text-muted)" style={{ marginBottom: '8px' }} />
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Click to upload proof screenshot</p>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
-                />
-              </>
-            ) : (
-              <div style={{ position: 'relative' }}>
-                <img src={previewUrl} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px' }} />
-                <button 
-                  type="button" 
-                  onClick={removeFile}
-                  style={{ 
-                    position: 'absolute', top: '-10px', right: '-10px', 
-                    background: 'var(--accent-red)', border: 'none', 
-                    borderRadius: '50%', padding: '4px', cursor: 'pointer' 
-                  }}
-                >
-                  <X size={16} color="white" />
-                </button>
-              </div>
-            )}
+          <div className="input-group">
+            <label className="input-label">Giveaway Post URL</label>
+            <div style={{ position: 'relative' }}>
+              <LinkIcon size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '14px' }} />
+              <input
+                type="url"
+                className="input-field"
+                placeholder="https://x.com/..."
+                value={url}
+                onChange={e => setUrl(e.target.value)}
+                style={{ paddingLeft: '40px' }}
+                required
+              />
+            </div>
           </div>
-        </div>
 
-        <div className="input-group">
-          <label className="input-label">Or Proof URL</label>
-          <div style={{ position: 'relative' }}>
-            <ImageIcon size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '14px' }} />
-            <input
-              type="url"
+          <div className="input-group">
+            <label className="input-label">Reason for Report</label>
+            <select className="input-field" value={reason} onChange={e => setReason(e.target.value)}>
+              <option>No winner announced</option>
+              <option>Winner is a bot/burner account</option>
+              <option>Requires malicious/phishing link</option>
+              <option>Engagement farming (constant fake giveaways)</option>
+              <option>Verified Legit (I won and received the prize!)</option>
+            </select>
+          </div>
+
+          <div className="input-group">
+            <label className="input-label">Proof (Attach Screenshot or Image)</label>
+            <div className="file-upload-area" style={{
+              border: '2px dashed var(--panel-border)',
+              borderRadius: '12px',
+              padding: '20px',
+              textAlign: 'center',
+              position: 'relative',
+              cursor: 'pointer',
+              backgroundColor: 'rgba(255,255,255,0.02)'
+            }}>
+              {!previewUrl ? (
+                <>
+                  <Upload size={32} color="var(--text-muted)" style={{ marginBottom: '8px' }} />
+                  <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Click to upload proof screenshot</p>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
+                  />
+                </>
+              ) : (
+                <div style={{ position: 'relative' }}>
+                  <img src={previewUrl} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px' }} />
+                  <button
+                    type="button"
+                    onClick={removeFile}
+                    style={{
+                      position: 'absolute', top: '-10px', right: '-10px',
+                      background: 'var(--accent-red)', border: 'none',
+                      borderRadius: '50%', padding: '4px', cursor: 'pointer'
+                    }}
+                  >
+                    <X size={16} color="white" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="input-group">
+            <label className="input-label">Or Proof URL</label>
+            <div style={{ position: 'relative' }}>
+              <ImageIcon size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '14px' }} />
+              <input
+                type="url"
+                className="input-field"
+                placeholder="Transaction hash or hosted image link"
+                value={proofUrl}
+                onChange={e => setProofUrl(e.target.value)}
+                style={{ paddingLeft: '40px' }}
+              />
+            </div>
+          </div>
+
+          <div className="input-group">
+            <label className="input-label">Additional Notes</label>
+            <textarea
               className="input-field"
-              placeholder="Transaction hash or hosted image link"
-              value={proofUrl}
-              onChange={e => setProofUrl(e.target.value)}
-              style={{ paddingLeft: '40px' }}
+              placeholder="Provide any context..."
+              rows="4"
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
             />
           </div>
-        </div>
 
-        <div className="input-group">
-          <label className="input-label">Additional Notes</label>
-          <textarea
-            className="input-field"
-            placeholder="Provide any context..."
-            rows="4"
-            value={notes}
-            onChange={e => setNotes(e.target.value)}
-          />
-        </div>
-
-        <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '12px' }} disabled={loading}>
-          {loading ? 'Submitting...' : <><Send size={18} /> Submit Report</>}
-        </button>
-      </form>
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '12px' }} disabled={loading}>
+            {loading ? 'Submitting...' : <><Send size={18} /> Submit Report</>}
+          </button>
+        </form>
       </div>
     </div>
   )

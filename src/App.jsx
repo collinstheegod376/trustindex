@@ -10,7 +10,6 @@ import Promote from './pages/Promote';
 import Support from './pages/Support';
 import HallOfFame from './pages/HallOfFame';
 import WallOfShame from './pages/WallOfShame';
-import RecentReports from './pages/RecentReports';
 import { supabase } from './supabase';
 
 function Navigation() {
@@ -142,7 +141,6 @@ function App() {
           <Route path="/support" element={<Support />} />
               <Route path="/hall-of-fame" element={<HallOfFame />} />
               <Route path="/wall-of-shame" element={<WallOfShame />} />
-              <Route path="/recent-reports" element={<RecentReports />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>
