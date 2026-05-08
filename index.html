@@ -18,10 +18,15 @@
     <script type="module" src="/src/main.jsx"></script>
     <script>
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch(err => {
-            console.log('SW registration failed: ', err);
-          });
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          let hasUnregistered = false;
+          for(let registration of registrations) {
+            registration.unregister();
+            hasUnregistered = true;
+          }
+          if (hasUnregistered) {
+            window.location.reload(true);
+          }
         });
       }
     </script>
