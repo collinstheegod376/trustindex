@@ -24,11 +24,16 @@ export default function RecentReports() {
       .gt('created_at', seventyTwoHoursAgo)
       .order('created_at', { ascending: false })
 
+    if (error) {
+      console.error("Error fetching reports:", error)
+    }
+
     if (data) {
       const processed = data.map(r => {
         const votes = r.votes || []
-        const score = votes.reduce((acc, v) => acc + (v.vote_type || 0), 0)
-        return { ...r, score }
+        const upvotes = votes.filter(v => v.vote_type === 1).length
+        const downvotes = votes.filter(v => v.vote_type === -1).length
+        return { ...r, upvotes, downvotes, score: upvotes - downvotes }
       })
       setReports(processed)
 
@@ -44,18 +49,24 @@ export default function RecentReports() {
     setLoading(false)
   }
 
-  async function handleVote(reportId, type) {
-    if (!user) return alert('Sign in to vote')
-    const current = userVotes[reportId]
-    const newType = current === type ? 0 : type
+  async function handleVote(reportId, voteType) {
+    if (!user) return alert('Please sign in to vote')
 
-    const { error } = await supabase.from('votes').upsert({
-      user_id: user.id,
-      report_id: reportId,
-      vote_type: newType
-    }, { onConflict: 'user_id,report_id' })
-
-    if (!error) fetchReports()
+    const currentVote = userVotes[reportId]
+    if (currentVote === voteType) {
+      // Remove vote
+      await supabase.from('votes').delete().eq('report_id', reportId).eq('user_id', user.id)
+      setUserVotes(prev => {
+        const next = { ...prev }
+        delete next[reportId]
+        return next
+      })
+    } else {
+      // Upsert vote
+      await supabase.from('votes').upsert({ report_id: reportId, user_id: user.id, vote_type: voteType })
+      setUserVotes(prev => ({ ...prev, [reportId]: voteType }))
+    }
+    fetchReports() // Refresh counts
   }
 
   async function handleDelete(reportId) {
@@ -82,6 +93,12 @@ export default function RecentReports() {
 
         {loading ? (
           <div className="spinner" style={{ margin: '40px auto' }}></div>
+        ) : reports.length === 0 ? (
+          <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '40px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', marginTop: '20px' }}>
+            <MessageSquare size={48} style={{ opacity: 0.2, marginBottom: '16px' }} />
+            <p style={{ fontSize: '1.1rem', marginBottom: '8px' }}>No reports filed yet</p>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Be the first to report a scam giveaway!</p>
+          </div>
         ) : (
           <div className="reports-feed">
             {reports.map((r, i) => (
