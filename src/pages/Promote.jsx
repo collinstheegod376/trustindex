@@ -11,7 +11,7 @@ export default function Promote() {
   const [searchParams] = useSearchParams()
   const type = searchParams.get('type') || 'promote' // 'promote' or 'report'
   
-  const [handle, setHandle] = useState('')
+  const [handle, setHandle] = useState(searchParams.get('handle') || '')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
 

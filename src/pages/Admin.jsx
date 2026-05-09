@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../supabase'
-import { ShieldCheck, ShieldAlert, AlertTriangle, ArrowLeft, MessageSquare, Send } from 'lucide-react'
+import { ShieldCheck, ShieldAlert, AlertTriangle, ArrowLeft, MessageSquare, Send, Search } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 export default function Admin() {
@@ -17,6 +17,7 @@ export default function Admin() {
   const [newStatus, setNewStatus] = useState('scam')
   const [newScore, setNewScore] = useState(10)
   const [isAdding, setIsAdding] = useState(false)
+  const [accountSearch, setAccountSearch] = useState('')
 
   useEffect(() => {
     if (isAdmin) {
@@ -333,77 +334,94 @@ export default function Admin() {
         </div>
       </section>
 
-      <section className="glass-panel">
-        <h2 style={{ marginBottom: '20px' }}>All Tracked Accounts</h2>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--panel-border)' }}>
-                <th style={{ padding: '12px' }}>Handle</th>
-                <th style={{ padding: '12px' }}>Score</th>
-                <th style={{ padding: '12px' }}>Status</th>
-                <th style={{ padding: '12px' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {accounts.map(a => (
-                <tr key={a.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <td style={{ padding: '12px', fontWeight: 'bold' }}>@{a.x_handle}</td>
-                  <td style={{ padding: '12px' }}>
-                    <input 
-                      type="number" 
-                      min="0" 
-                      max="100" 
-                      className="input-field" 
-                      style={{ padding: '4px 8px', width: '70px', margin: 0 }}
-                      value={a.trust_score} 
-                      onChange={async (e) => {
-                        const newScore = Number(e.target.value);
-                        await supabase.from('tracked_accounts').update({ trust_score: newScore }).eq('id', a.id);
+      <section className="glass-panel" style={{ padding: '32px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', gap: '16px' }}>
+          <h2 style={{ margin: 0 }}>All Tracked Accounts</h2>
+          <div className="input-group" style={{ margin: 0, minWidth: '250px', position: 'relative' }}>
+            <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            <input 
+              type="text" 
+              className="input-field" 
+              placeholder="Search by handle..." 
+              style={{ paddingLeft: '40px', margin: 0, width: '100%' }}
+              value={accountSearch}
+              onChange={e => setAccountSearch(e.target.value)}
+            />
+          </div>
+        </div>
+        
+        <div className="tracked-accounts-grid">
+          {accounts
+            .filter(a => a.x_handle.toLowerCase().includes(accountSearch.toLowerCase()))
+            .map(a => (
+            <div key={a.id} className="tracked-account-card">
+              <div className="tac-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <img src={`https://unavatar.io/x/${a.x_handle}`} alt="" style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; }} />
+                  <span style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>@{a.x_handle}</span>
+                </div>
+                <span className={`badge badge-${a.status === 'verified' ? 'green' : a.status === 'scam' ? 'red' : 'yellow'}`}>
+                  {a.status}
+                </span>
+              </div>
+              <div className="tac-controls">
+                <div className="tac-group">
+                  <label>Score</label>
+                  <input 
+                    type="number" 
+                    min="0" max="100" 
+                    className="input-field" 
+                    style={{ padding: '6px 12px', width: '80px', margin: 0, textAlign: 'center' }}
+                    value={a.trust_score} 
+                    onChange={async (e) => {
+                      const newScore = Number(e.target.value);
+                      await supabase.from('tracked_accounts').update({ trust_score: newScore }).eq('id', a.id);
+                      fetchData();
+                    }} 
+                  />
+                </div>
+                <div className="tac-group" style={{ flex: 1 }}>
+                  <label>Status</label>
+                  <select 
+                    className="input-field" 
+                    style={{ padding: '6px 12px', width: '100%', margin: 0 }}
+                    value={a.status}
+                    onChange={async (e) => {
+                      const newStatus = e.target.value;
+                      const newScore = newStatus === 'verified' ? 90 : newStatus === 'scam' ? 10 : 50;
+                      await supabase.from('tracked_accounts').update({ status: newStatus, trust_score: newScore }).eq('id', a.id);
+                      fetchData();
+                    }}
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="verified">Verified</option>
+                    <option value="scam">Scam</option>
+                  </select>
+                </div>
+                <div className="tac-group" style={{ justifyContent: 'flex-end' }}>
+                  <label style={{ visibility: 'hidden' }}>Action</label>
+                  <button 
+                    className="btn btn-danger" 
+                    style={{ padding: '6px 16px', height: '42px' }}
+                    onClick={async () => {
+                      if (window.confirm(`Delete @${a.x_handle}?`)) {
+                        await supabase.from('tracked_accounts').delete().eq('id', a.id);
                         fetchData();
-                      }} 
-                    />
-                  </td>
-                  <td style={{ padding: '12px' }}>
-                    <span className={`badge badge-${a.status === 'verified' ? 'green' : a.status === 'scam' ? 'red' : 'yellow'}`}>
-                      {a.status}
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px' }}>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <select 
-                        className="input-field" 
-                        style={{ padding: '4px 8px', width: 'auto' }}
-                        value={a.status}
-                        onChange={async (e) => {
-                          const newStatus = e.target.value;
-                          const newScore = newStatus === 'verified' ? 90 : newStatus === 'scam' ? 10 : 50;
-                          await supabase.from('tracked_accounts').update({ status: newStatus, trust_score: newScore }).eq('id', a.id);
-                          fetchData();
-                        }}
-                      >
-                        <option value="pending">Pending</option>
-                        <option value="verified">Verified</option>
-                        <option value="scam">Scam</option>
-                      </select>
-                      <button 
-                        className="btn btn-danger" 
-                        style={{ padding: '6px 10px', fontSize: '0.8rem' }}
-                        onClick={async () => {
-                          if (window.confirm(`Are you sure you want to delete @${a.x_handle}?`)) {
-                            await supabase.from('tracked_accounts').delete().eq('id', a.id);
-                            fetchData();
-                          }
-                        }}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                      }
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+          
+          {accounts.filter(a => a.x_handle.toLowerCase().includes(accountSearch.toLowerCase())).length === 0 && (
+            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              No accounts match your search.
+            </div>
+          )}
         </div>
       </section>
     </div>

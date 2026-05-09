@@ -216,7 +216,7 @@ export default function Report() {
           </div>
 
           <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '12px' }} disabled={loading}>
-            {loading ? 'Submitting...' : <><Send size={18} /> Submit Report</>}
+            {loading ? 'Submitting...' : <><Send size={18} /> Submit</>}
           </button>
         </form>
       </div>

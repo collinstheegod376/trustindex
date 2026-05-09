@@ -254,6 +254,47 @@ async function handleAdminCommand(tweet, text, authorHandle) {
   }
 }
 
+async function checkIsFollowing(authorId, authorHandle) {
+  const cacheKey = `follows:${authorId}`;
+  const cached = await connection.get(cacheKey);
+  // Cache for 1 day if following, 5 mins if not following
+  if (cached !== null) return cached === 'true';
+
+  try {
+    const friendship = await rwClient.v1.get('friendships/show.json', { source_id: authorId, target_screen_name: BOT_USERNAME });
+    const isFollowing = friendship.relationship.source.following;
+    await connection.set(cacheKey, isFollowing ? 'true' : 'false', 'EX', isFollowing ? 86400 : 300);
+    return isFollowing;
+  } catch (err) {
+    console.error("Error checking following status:", err);
+    return true; // Fail open
+  }
+}
+
+async function generateFollowRequestReply(text, authorHandle) {
+  const prompt = `
+You are @${BOT_USERNAME}, a helpful bot that checks if X accounts are scams or legit.
+@${authorHandle} just asked you a question: "${text}"
+
+However, they are NOT following you. 
+Write a short, polite, and friendly ONE-SENTENCE reply telling them that you'd love to help, but they need to follow you first. 
+Be nice, maybe slightly playful. Do not use hashtags.
+
+Examples:
+- "Hey @${authorHandle}, I'd love to run that check for you, but I only serve my followers—hit that follow button and try again! 💙"
+- "I've got the info you need, but you gotta follow me first! 😉"
+
+Output ONLY the reply text, nothing else.
+`;
+  try {
+    const result = await model.generateContent(prompt);
+    let reply = result.response.text().trim();
+    return reply.replace(/^["']|["']$/g, '');
+  } catch (e) {
+    return `Hey @${authorHandle}, I'd love to check that for you, but please follow me first! 💙`;
+  }
+}
+
 async function generateReply(originalQuestion, targetUsername, account) {
   const prompt = `
 You are @larpfinderonx, a bot that answers questions about X accounts.
@@ -306,9 +347,22 @@ async function processMention(tweet) {
     }
 
     const authorHandle = tweet.author.username.toLowerCase();
+    const authorId = tweet.author.id;
     
     // Prevent self-reply and bot loops
     if (authorHandle === BOT_USERNAME || authorHandle.endsWith('bot')) return;
+
+    // Must be following the bot (Admin commands bypass this check)
+    const isAdmin = (await getAdmins()).includes(authorHandle);
+    if (!isAdmin) {
+      const isFollowing = await checkIsFollowing(authorId, authorHandle);
+      if (!isFollowing) {
+        const replyText = await generateFollowRequestReply(tweet.text, authorHandle);
+        await replyQueue.add('reply', { tweetId: tweet.id, text: replyText });
+        await markProcessed(tweet.id);
+        return;
+      }
+    }
 
     const text = tweet.text;
 

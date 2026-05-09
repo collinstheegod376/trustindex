@@ -431,3 +431,55 @@ table {
 .hover-glow:hover { color: var(--accent-blue) !important; text-shadow: 0 0 15px rgba(41, 121, 255, 0.5); transition: all 0.3s ease; }
 
 [style*='animation'], .glass-panel, .btn, .input-field { will-change: transform, opacity, box-shadow; backface-visibility: hidden; }
+
+/* Tracked Accounts Grid */
+.tracked-accounts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.tracked-account-card {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tracked-account-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  border-color: rgba(255,255,255,0.15);
+}
+
+.tac-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tac-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.tac-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tac-group label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
