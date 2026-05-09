@@ -139,14 +139,14 @@ export default function Home() {
                       style={{ width: '32px', height: '32px', borderRadius: '50%', border: `2px solid ${account.status === 'verified' ? 'var(--accent-green)' : account.status === 'scam' ? 'var(--accent-red)' : '#ffd600'}`, objectFit: 'cover', flexShrink: 0 }}
                       onError={(e) => { e.target.onerror = null; e.target.src = `https://ui-avatars.com/api/?name=${account.x_handle}&background=1E293B&color=fff`; }}
                     />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}>
                       <div style={{ flexShrink: 0 }}><StatusIcon status={account.status} /></div>
                       <a 
                         href={`https://x.com/${account.x_handle}`} 
                         target="_blank" 
                         rel="noreferrer"
                         className="external-link"
-                        style={{ fontSize: '1.2rem', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                        style={{ fontSize: '1.2rem', fontWeight: 'bold', wordBreak: 'break-all' }}
                       >
                         @{account.x_handle}
                       </a>
@@ -228,7 +228,7 @@ export default function Home() {
                   target="_blank" 
                   rel="noreferrer" 
                   className="board-handle external-link"
-                  style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                  style={{ wordBreak: 'break-all' }}
                 >
                   @{a.x_handle}
                 </a>
@@ -259,7 +259,7 @@ export default function Home() {
                   target="_blank" 
                   rel="noreferrer" 
                   className="board-handle external-link"
-                  style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                  style={{ wordBreak: 'break-all' }}
                 >
                   @{a.x_handle}
                 </a>

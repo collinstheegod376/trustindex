@@ -54,7 +54,7 @@ export default function WallOfShame() {
                       href={`https://x.com/${acc.x_handle}`} 
                       target="_blank" 
                       rel="noreferrer" 
-                      style={{ fontSize: '1.2rem', fontWeight: 700, color: 'inherit', textDecoration: 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                      style={{ fontSize: '1.2rem', fontWeight: 700, color: 'inherit', textDecoration: 'none', wordBreak: 'break-all' }}
                       className="hover-glow"
                     >
                       @{acc.x_handle}
