@@ -356,9 +356,17 @@ export default function Admin() {
             .map(a => (
             <div key={a.id} className="tracked-account-card">
               <div className="tac-header">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <img src={`https://unavatar.io/x/${a.x_handle}`} alt="" style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; }} />
-                  <span style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>@{a.x_handle}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+                  <img src={`https://unavatar.io/x/${a.x_handle}`} alt="" style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none'; }} />
+                  <a 
+                    href={`https://x.com/${a.x_handle}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="hover-glow"
+                    style={{ fontWeight: 'bold', fontSize: '1.1rem', textDecoration: 'none', color: 'inherit', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                  >
+                    @{a.x_handle}
+                  </a>
                 </div>
                 <span className={`badge badge-${a.status === 'verified' ? 'green' : a.status === 'scam' ? 'red' : 'yellow'}`}>
                   {a.status}
